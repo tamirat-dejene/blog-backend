@@ -35,7 +35,7 @@ func NewBlogRepository(db *mongo.Database) domain.BlogRepository {
 	}
 }
 
-func (b *BlogRepository) Create(ctx context.Context, blog *domain.Blog) error {
+func (b *BlogRepository) CreateBlog(ctx context.Context, blog *domain.Blog) error {
 	now := time.Now()
 	blog.CreatedAt = now
 	blog.UpdatedAt = now
@@ -66,5 +66,32 @@ func (b *BlogRepository) Create(ctx context.Context, blog *domain.Blog) error {
 	blog.ID = oid.Hex()
 	return nil
 }
-func (b *BlogRepository) Update(ctx context.Context, blog *domain.Blog) error
-func (b *BlogRepository) Delete(ctx context.Context, id string) error
+func (b *BlogRepository) UpdateBlog(ctx context.Context, blog *domain.Blog) error {
+	oid, err := primitive.ObjectIDFromHex(blog.ID)
+
+	if err != nil {
+		return err
+	}
+	blog.UpdatedAt = time.Now()
+
+	update := bson.M{
+		"$set": bson.M{
+			"title":      blog.Title,
+			"content":    blog.Content,
+			"tags":       blog.Tags,
+			"updated_at": blog.UpdatedAt,
+		},
+	}
+
+	_, err = b.posts.UpdateByID(ctx, oid, update)
+	return err
+}
+func (b *BlogRepository) DeleteBlog(ctx context.Context, id string) error {
+	oid, err := primitive.ObjectIDFromHex(id)
+
+	if err != nil {
+		return err
+	}
+	_, err = b.posts.DeleteOne(ctx, bson.M{"_id": oid})
+	return err
+}
