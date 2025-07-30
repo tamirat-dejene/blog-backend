@@ -1,0 +1,6 @@
+This folder contains application configuration files and logic.
+
+Common contents:
+- Environment variable loading (.env)
+- Database or third-party service configurations
+- Configuration structs and loaders (e.g., config.go)

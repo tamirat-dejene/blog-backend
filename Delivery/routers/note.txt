@@ -1,0 +1,1 @@
+Defines all route groups and endpoints for the application. Each route is connected to the corresponding controller.

@@ -1,0 +1,1 @@
+Contains controller logic that handles HTTP requests and responses. It connects the delivery layer with the use cases.

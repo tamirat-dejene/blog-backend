@@ -1,0 +1,7 @@
+This folder stores all documentation related to the project.
+
+Common contents:
+- API documentation (e.g., Postman collections, Swagger files)
+- Setup instructions or deployment guides
+- Diagrams or architecture visuals
+- Developer onboarding notes

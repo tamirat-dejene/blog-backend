@@ -1,0 +1,1 @@
+Contains HTTP middleware for things like authentication, logging, CORS, etc.

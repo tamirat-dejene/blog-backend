@@ -1,0 +1,1 @@
+Encapsulates the business logic and coordinates between the controller and the repository.

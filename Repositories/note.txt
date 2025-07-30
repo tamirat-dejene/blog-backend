@@ -1,0 +1,1 @@
+Implements interfaces defined in the `Domain` layer to interact with the database or external services.

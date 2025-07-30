@@ -1,0 +1,1 @@
+Defines the core business entities and interfaces (abstractions) used across the application layers.
