@@ -1,4 +1,4 @@
-package DTO
+package dto
 
 import (
 	domain "g6/blog-api/Domain"

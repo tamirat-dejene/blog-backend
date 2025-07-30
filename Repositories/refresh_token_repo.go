@@ -3,7 +3,7 @@ package repositories
 import (
 	"context"
 	"fmt"
-	"g6/blog-api/Domain"
+	domain "g6/blog-api/Domain"
 	"g6/blog-api/Infrastructure/database"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -15,14 +15,14 @@ type RefreshTokenRepository struct {
 	Collection string
 }
 
-func NewRefreshTokenRepository(db *mongo.Database, collection string) Domain.IRefreshTokenRepository {
+func NewRefreshTokenRepository(db *mongo.Database, collection string) domain.IRefreshTokenRepository {
 	return &RefreshTokenRepository{
 		DB:         db,
 		Collection: collection,
 	}
 }
 
-func (repo *RefreshTokenRepository) Save(ctx context.Context, token *Domain.RefreshToken) error {
+func (repo *RefreshTokenRepository) Save(ctx context.Context, token *domain.RefreshToken) error {
 	tokenDb := database.FromRefreshTokenEntityToDB(token)
 	if _, err := repo.DB.Collection(repo.Collection).InsertOne(ctx, tokenDb); err != nil {
 		return err
@@ -30,7 +30,7 @@ func (repo *RefreshTokenRepository) Save(ctx context.Context, token *Domain.Refr
 	return nil
 }
 
-func (repo *RefreshTokenRepository) FindByToken(ctx context.Context, token string) (*Domain.RefreshToken, error) {
+func (repo *RefreshTokenRepository) FindByToken(ctx context.Context, token string) (*domain.RefreshToken, error) {
 	var tokenDB database.RefreshTokenDB
 	err := repo.DB.Collection(repo.Collection).FindOne(ctx, bson.M{"token": token}).Decode(&tokenDB)
 	if err != nil {

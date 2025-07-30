@@ -3,7 +3,7 @@ package repositories
 import (
 	"context"
 	"fmt"
-	"g6/blog-api/Domain"
+	domain "g6/blog-api/Domain"
 	"g6/blog-api/Infrastructure/database"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -15,14 +15,14 @@ type UserRepository struct {
 	Collection string
 }
 
-func NewUserRepository(db *mongo.Database, collection string) Domain.IUserRepository {
+func NewUserRepository(db *mongo.Database, collection string) domain.IUserRepository {
 	return &UserRepository{
 		DB:         db,
 		Collection: collection,
 	}
 }
 
-func (repo *UserRepository) CreateUser(ctx context.Context, user *Domain.User) error {
+func (repo *UserRepository) CreateUser(ctx context.Context, user *domain.User) error {
 	fmt.Println("Creating user:", user)
 	userDb := database.FromUserEntityToDB(user)
 	if _, err := repo.DB.Collection(repo.Collection).InsertOne(ctx, userDb); err != nil {
@@ -31,7 +31,7 @@ func (repo *UserRepository) CreateUser(ctx context.Context, user *Domain.User) e
 	return nil
 }
 
-func (repo *UserRepository) GetAllUsers(ctx context.Context) ([]*Domain.User, error) {
+func (repo *UserRepository) GetAllUsers(ctx context.Context) ([]*domain.User, error) {
 	var users []*database.UserDB
 	cursor, err := repo.DB.Collection(repo.Collection).Find(ctx, bson.M{})
 	if err != nil {
@@ -54,7 +54,7 @@ func (repo *UserRepository) GetAllUsers(ctx context.Context) ([]*Domain.User, er
 	return database.FromUserDBListToEntityList(users), nil
 }
 
-func (repo *UserRepository) GetUserByUsername(ctx context.Context, username string) (*Domain.User, error) {
+func (repo *UserRepository) GetUserByUsername(ctx context.Context, username string) (*domain.User, error) {
 	var userDB database.UserDB
 	err := repo.DB.Collection(repo.Collection).FindOne(ctx, bson.M{"username": bson.M{"$regex": username, "$options": "i"}}).Decode(&userDB)
 	if err != nil {
@@ -66,7 +66,7 @@ func (repo *UserRepository) GetUserByUsername(ctx context.Context, username stri
 	return database.FromUserDBToEntity(&userDB), nil
 }
 
-func (repo *UserRepository) GetUserByEmail(ctx context.Context, email string) (*Domain.User, error) {
+func (repo *UserRepository) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
 	var userDB database.UserDB
 	err := repo.DB.Collection(repo.Collection).FindOne(ctx, bson.M{"email": bson.M{"$regex": email, "$options": "i"}}).Decode(&userDB)
 	if err != nil {

@@ -1,7 +1,7 @@
 package database
 
 import (
-	"g6/blog-api/Domain"
+	domain "g6/blog-api/Domain"
 	"time"
 )
 
@@ -12,7 +12,7 @@ type RefreshTokenDB struct {
 	CreatedAt time.Time `bson:"created_at"`
 }
 
-func FromRefreshTokenEntityToDB(token *Domain.RefreshToken) *RefreshTokenDB {
+func FromRefreshTokenEntityToDB(token *domain.RefreshToken) *RefreshTokenDB {
 	return &RefreshTokenDB{
 		Token:     token.Token,
 		UserID:    token.UserID,
@@ -21,8 +21,8 @@ func FromRefreshTokenEntityToDB(token *Domain.RefreshToken) *RefreshTokenDB {
 	}
 }
 
-func FromRefreshTokenDBToEntity(tokenDB *RefreshTokenDB) *Domain.RefreshToken {
-	return &Domain.RefreshToken{
+func FromRefreshTokenDBToEntity(tokenDB *RefreshTokenDB) *domain.RefreshToken {
+	return &domain.RefreshToken{
 		Token:     tokenDB.Token,
 		UserID:    tokenDB.UserID,
 		ExpiresAt: tokenDB.ExpiresAt,
