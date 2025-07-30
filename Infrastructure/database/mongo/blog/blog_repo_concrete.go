@@ -4,29 +4,38 @@ import (
 	"context"
 	"fmt"
 	domain "g6/blog-api/Domain"
+	"g6/blog-api/Infrastructure/database/mongo/mapper"
+	repositories "g6/blog-api/Repositories"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 type blogRepo struct {
-	db        *mongo.Database
+	db         mongo.Database
 	collection string
 }
 
 // Create implements repositories.BlogRepository.
 func (b blogRepo) Create(ctx context.Context, blog *domain.Blog) (*domain.Blog, error) {
 	// example implement
-	collection := b.db.Collection(b.collection)
-	res, err := collection.InsertOne(ctx, blog)
+
+	blog_model, err := mapper.FromDomain(blog)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to convert blog to model: %w", err)
 	}
-	if oid, ok := res.InsertedID.(primitive.ObjectID); ok {
-		blog.ID = oid
-	} else {
-		return nil, fmt.Errorf("failed to convert InsertedID to ObjectID")
+
+	coll := b.db.Collection(b.collection)
+	res, err := coll.InsertOne(ctx, blog_model)
+	if err != nil {
+		return nil, fmt.Errorf("failed to insert blog: %w", err)
 	}
+
+	oid, ok := res.InsertedID.(primitive.ObjectID)
+	if !ok {
+		return nil, fmt.Errorf("failed to get inserted ID")
+	}
+	blog.ID = oid.Hex()
 	return blog, nil
 }
 
@@ -48,4 +57,11 @@ func (b blogRepo) FindByTitle(ctx context.Context, title string) ([]*domain.Blog
 // Update implements repositories.BlogRepository.
 func (b blogRepo) Update(ctx context.Context, id string, blog *domain.Blog) (*domain.Blog, error) {
 	panic("unimplemented")
+}
+
+func NewBlogRepo(database mongo.Database, collection string) repositories.BlogRepository {
+	return &blogRepo{
+		db:         database,
+		collection: collection,
+	}
 }
