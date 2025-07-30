@@ -28,7 +28,7 @@ type UserModel struct {
 }
 
 // Convert to domain
-func ToDomain(user *UserModel) *domain.User {
+func UserToDomain(user *UserModel) *domain.User {
 	return &domain.User{
 		ID:             user.ID.Hex(),
 		Username:       user.Username,
@@ -48,7 +48,7 @@ func ToDomain(user *UserModel) *domain.User {
 	}
 }
 
-func FromDomain(user *domain.User) (*UserModel, error) {
+func UserFromDomain(user *domain.User) (*UserModel, error) {
 	var objectID primitive.ObjectID
 	var err error
 	// if user.ID is not empty, convert it to ObjectID
