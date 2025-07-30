@@ -16,7 +16,7 @@ type JwtService struct {
 	RefreshExpiry time.Duration
 }
 
-func NewJWTService(accessSecret, refreshSecret string, accessExpiry, refreshExpiry int) domain.IRefreshTokenRepository {
+func NewJWTService(accessSecret, refreshSecret string, accessExpiry, refreshExpiry int) domain.IAuthService {
 	return &JwtService{
 		AccessSecret:  accessSecret,
 		RefreshSecret: refreshSecret,
@@ -25,7 +25,7 @@ func NewJWTService(accessSecret, refreshSecret string, accessExpiry, refreshExpi
 	}
 }
 
-func (s *JwtService) GenerateTokens(user domain.User) (domain.RefreshToken, error) {
+func (s *JwtService) GenerateTokens(user domain.User) (domain.RefreshTokenResponse, error) {
 	fmt.Println(s, user)
 	accessClaims := jwt.MapClaims{
 		"sub":      user.ID,
@@ -36,7 +36,7 @@ func (s *JwtService) GenerateTokens(user domain.User) (domain.RefreshToken, erro
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
 	accessTokenStr, err := accessToken.SignedString([]byte(s.AccessSecret))
 	if err != nil {
-		return domain.RefreshToken{}, err
+		return domain.RefreshTokenResponse{}, err
 	}
 
 	refreshClaims := jwt.MapClaims{
@@ -47,12 +47,13 @@ func (s *JwtService) GenerateTokens(user domain.User) (domain.RefreshToken, erro
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
 	refreshTokenStr, err := refreshToken.SignedString([]byte(s.RefreshSecret))
 	if err != nil {
-		return domain.RefreshToken{}, err
+		return domain.RefreshTokenResponse{}, err
 	}
 
-	return domain.RefreshToken{
+	return domain.RefreshTokenResponse{
 		AccessToken:  accessTokenStr,
 		RefreshToken: refreshTokenStr,
+		ExpiresAt:    time.Now().Add(s.RefreshExpiry),
 	}, nil
 }
 

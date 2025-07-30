@@ -34,3 +34,23 @@ func (usecase *UserUsecase) CreateUser(user *Domain.User) error {
 	}
 	return nil
 }
+
+func (usecase *UserUsecase) GetUserByUsername(username string) (*Domain.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	user, err := usecase.UserRepository.GetUserByUsername(ctx, username)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func (usecase *UserUsecase) GetUserByEmail(email string) (*Domain.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	user, err := usecase.UserRepository.GetUserByEmail(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}

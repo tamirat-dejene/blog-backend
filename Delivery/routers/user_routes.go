@@ -15,7 +15,7 @@ func NewUserRoutes(env *config.Env, group *gin.RouterGroup, db *mongo.Database) 
 	uu := userUsecase.NewUserUsecase(ur)
 	uc := controllers.NewUserController(uu)
 
-	group.GET("/users", uc.GetAllUsers)
-	group.POST("/users", uc.CreateUser)
+	group.GET("/users/:id", uc.GetAllUsers)
+	// group.POST("/users", uc.CreateUser)
 
 }

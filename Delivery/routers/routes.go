@@ -12,6 +12,7 @@ func SetupRoutes(env *Configs.Env, db *mongo.Database) *gin.Engine {
 	router := gin.Default()
 	api := router.Group("/api/v1")
 	{
+		NewAuthRoutes(env, api, db)
 		NewUserRoutes(env, api, db)
 	}
 	return router

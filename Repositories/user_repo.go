@@ -53,3 +53,27 @@ func (repo *UserRepository) GetAllUsers(ctx context.Context) ([]*Domain.User, er
 
 	return database.FromUserDBListToEntityList(users), nil
 }
+
+func (repo *UserRepository) GetUserByUsername(ctx context.Context, username string) (*Domain.User, error) {
+	var userDB database.UserDB
+	err := repo.DB.Collection(repo.Collection).FindOne(ctx, bson.M{"username": bson.M{"$regex": username, "$options": "i"}}).Decode(&userDB)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, err
+	}
+	return database.FromUserDBToEntity(&userDB), nil
+}
+
+func (repo *UserRepository) GetUserByEmail(ctx context.Context, email string) (*Domain.User, error) {
+	var userDB database.UserDB
+	err := repo.DB.Collection(repo.Collection).FindOne(ctx, bson.M{"email": bson.M{"$regex": email, "$options": "i"}}).Decode(&userDB)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, err
+	}
+	return database.FromUserDBToEntity(&userDB), nil
+}
