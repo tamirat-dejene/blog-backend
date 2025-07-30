@@ -1,28 +1,59 @@
 package domain
 
 import (
+	"context"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Blog struct {
-	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	Title     string             `bson:"title" json:"title" binding:"required"`
-	Content   string             `bson:"content" json:"content" binding:"required"`
-	AuthorID  primitive.ObjectID `bson:"author_id" json:"author_id" binding:"required"`
-	Tags      []string           `bson:"tags,omitempty" json:"tags"`
-	CreatedAt time.Time          `bson:"created_at" json:"created_at"`
-	UpdatedAt time.Time          `bson:"updated_at" json:"updated_at"`
-	Likes     int                `bson:"likes" json:"likes"`
-	Dislikes  int                `bson:"dislikes" json:"dislikes"`
-	ViewCount int                `bson:"view_count" json:"view_count"`
+	ID        string
+	Title     string
+	Content   string
+	AuthorID  string
+	Tags      []string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	Likes     int
+	Dislikes  int
+	ViewCount int
 }
 
 type BlogComment struct {
-	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	BlogID    primitive.ObjectID `bson:"blog_id" json:"blog_id" binding:"required"`
-	AuthorID  primitive.ObjectID `bson:"author_id" json:"author_id" binding:"required"`
-	Comment   string             `bson:"comment" json:"comment" binding:"required"`
-	CreatedAt time.Time          `bson:"created_at" json:"created_at"`
+	ID        string
+	BlogID    string
+	AuthorID  string
+	Comment   string
+	CreatedAt time.Time
+}
+
+// interface for blog data operations.
+type BlogRepository interface {
+	Create(ctx context.Context, blog *Blog) (*Blog, error)
+	Update(ctx context.Context, id string, blog Blog) (Blog, error)
+	Delete(ctx context.Context, id string) error
+	FindAll(ctx context.Context) ([]Blog, error)
+
+	// Find related blogs which title relates to the given title
+	FindByTitle(ctx context.Context, title string) ([]Blog, error)
+
+	//... more methods can be added based on the usecases
+}
+
+type BlogCommentRepository interface {
+	Create(ctx context.Context, comment BlogComment) (Blog, error)
+	Delete(ctx context.Context, id string) error
+}
+
+// interface for blog data operations
+type BlogUsecase interface {
+	CreateBlog(ctx context.Context, blog *Blog) (*Blog, error)
+	UpdateBlog(ctx context.Context, id string, blog Blog) (Blog, error)
+	DeleteBlog(ctx context.Context, id string) error
+	GetAllBlogs(ctx context.Context) ([]Blog, error)
+	GetBlogsByTitle(ctx context.Context, title string) ([]Blog, error)
+}
+
+type BlogCommentUsecase interface {
+	CreateComment(ctx context.Context, comment BlogComment) (Blog, error)
+	DeleteComment(ctx context.Context, id string) error
 }
