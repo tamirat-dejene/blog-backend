@@ -29,7 +29,7 @@ type BlogCommentModel struct {
 }
 
 // Convert to domain
-func ToDomain(blog *BlogModel) *domain.Blog {
+func BlogToDomain(blog *BlogModel) *domain.Blog {
 	return &domain.Blog{
 		ID:        blog.ID.Hex(),
 		Title:     blog.Title,
@@ -45,7 +45,7 @@ func ToDomain(blog *BlogModel) *domain.Blog {
 }
 
 // Convert from domain
-func FromDomain(blog *domain.Blog) (*BlogModel, error) {
+func BlogFromDomain(blog *domain.Blog) (*BlogModel, error) {
 	authorID, err := primitive.ObjectIDFromHex(blog.AuthorID)
 	if err != nil {
 		return nil, err
@@ -72,5 +72,46 @@ func FromDomain(blog *domain.Blog) (*BlogModel, error) {
 		Likes:     blog.Likes,
 		Dislikes:  blog.Dislikes,
 		ViewCount: blog.ViewCount,
+	}, nil
+}
+
+// Convert BlogCommentModel to domain.BlogComment
+func BlogCommentToDomain(comment *BlogCommentModel) *domain.BlogComment {
+	return &domain.BlogComment{
+		ID:        comment.ID.Hex(),
+		BlogID:    comment.BlogID.Hex(),
+		AuthorID:  comment.AuthorID.Hex(),
+		Comment:   comment.Comment,
+		CreatedAt: comment.CreatedAt,
+	}
+}
+
+// Convert domain.BlogComment to BlogCommentModel
+func BlogCommentFromDomain(comment *domain.BlogComment) (*BlogCommentModel, error) {
+	blogID, err := primitive.ObjectIDFromHex(comment.BlogID)
+	if err != nil {
+		return nil, err
+	}
+	authorID, err := primitive.ObjectIDFromHex(comment.AuthorID)
+	if err != nil {
+		return nil, err
+	}
+
+	var objectID primitive.ObjectID
+	if comment.ID != "" {
+		objectID, err = primitive.ObjectIDFromHex(comment.ID)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		objectID = primitive.NewObjectID()
+	}
+
+	return &BlogCommentModel{
+		ID:        objectID,
+		BlogID:    blogID,
+		AuthorID:  authorID,
+		Comment:   comment.Comment,
+		CreatedAt: comment.CreatedAt,
 	}, nil
 }

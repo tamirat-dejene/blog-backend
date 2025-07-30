@@ -14,7 +14,7 @@ type blogRepo struct {
 
 // Create implements domain.BlogRepository.
 func (b *blogRepo) Create(ctx context.Context, blog *domain.Blog) (*domain.Blog, error) {
-	blog_model, err := mapper.FromDomain(blog)
+	blog_model, err := mapper.BlogFromDomain(blog)
 	if err != nil {
 		return nil, err
 	}
