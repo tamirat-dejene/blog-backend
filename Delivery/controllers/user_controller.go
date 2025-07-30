@@ -2,8 +2,8 @@ package controllers
 
 import (
 	"fmt"
-	"g6/blog-api/Delivery/DTO"
-	"g6/blog-api/Domain"
+	"g6/blog-api/Delivery/dto"
+	domain "g6/blog-api/Domain"
 	"net/http"
 	"time"
 
@@ -14,10 +14,10 @@ import (
 var validate = validator.New()
 
 type UserController struct {
-	UserUsecase Domain.IUserUsecase
+	UserUsecase domain.IUserUsecase
 }
 
-func NewUserController(userUsecase Domain.IUserUsecase) *UserController {
+func NewUserController(userUsecase domain.IUserUsecase) *UserController {
 	return &UserController{
 		UserUsecase: userUsecase,
 	}
@@ -28,11 +28,11 @@ func (uc *UserController) GetAllUsers(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
 		return
 	}
-	c.JSON(http.StatusOK, DTO.FromUserEntityToDTOList(users))
+	c.JSON(http.StatusOK, dto.FromUserEntityToDTOList(users))
 }
 
 func (uc *UserController) CreateUser(c *gin.Context) {
-	var user DTO.UserRequest
+	var user dto.UserRequest
 	if err := c.ShouldBindJSON(&user); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
@@ -49,5 +49,5 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"message": "User created successfully", "data": DTO.FromUserEntityToDTO(newUser)})
+	c.JSON(http.StatusCreated, gin.H{"message": "User created successfully", "data": dto.FromUserEntityToDTO(newUser)})
 }

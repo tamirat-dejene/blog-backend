@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"g6/blog-api/Delivery/DTO"
+	dto "g6/blog-api/Delivery/dto"
 	domain "g6/blog-api/Domain"
 	"g6/blog-api/Infrastructure/security"
 	"net/http"
@@ -19,7 +19,7 @@ type AuthController struct {
 }
 
 func (ac *AuthController) RegisterRequest(c *gin.Context) {
-	var newUser DTO.UserRequest
+	var newUser dto.UserRequest
 	if err := c.ShouldBindJSON(&newUser); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -53,11 +53,11 @@ func (ac *AuthController) RegisterRequest(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register user"})
 		return
 	}
-	c.JSON(http.StatusCreated, DTO.FromUserEntityToDTO(user))
+	c.JSON(http.StatusCreated, dto.FromUserEntityToDTO(user))
 }
 
 func (ac *AuthController) LoginRequest(c *gin.Context) {
-	var loginRequest DTO.LoginRequest
+	var loginRequest dto.LoginRequest
 	if err := c.ShouldBindJSON(&loginRequest); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
@@ -105,7 +105,7 @@ func (ac *AuthController) LoginRequest(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save refresh token"})
 		return
 	}
-	c.JSON(http.StatusOK, DTO.LoginResponse{
+	c.JSON(http.StatusOK, dto.LoginResponse{
 		AccessToken:  response.AccessToken,
 		RefreshToken: response.RefreshToken,
 	})

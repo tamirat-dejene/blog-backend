@@ -2,27 +2,27 @@ package usecases
 
 import (
 	"context"
-	"g6/blog-api/Domain"
+	domain "g6/blog-api/Domain"
 	"time"
 )
 
 type RefreshTokenUsecase struct {
-	Repo Domain.IRefreshTokenRepository
+	Repo domain.IRefreshTokenRepository
 }
 
-func NewRefreshTokenUsecase(repo Domain.IRefreshTokenRepository) Domain.IRefreshTokenUsecase {
+func NewRefreshTokenUsecase(repo domain.IRefreshTokenRepository) domain.IRefreshTokenUsecase {
 	return &RefreshTokenUsecase{
 		Repo: repo,
 	}
 }
 
-func (uc *RefreshTokenUsecase) FindByToken(token string) (*Domain.RefreshToken, error) {
+func (uc *RefreshTokenUsecase) FindByToken(token string) (*domain.RefreshToken, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	return uc.Repo.FindByToken(ctx, token)
 }
 
-func (uc *RefreshTokenUsecase) Save(token *Domain.RefreshToken) error {
+func (uc *RefreshTokenUsecase) Save(token *domain.RefreshToken) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	return uc.Repo.Save(ctx, token)

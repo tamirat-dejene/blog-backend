@@ -1,4 +1,4 @@
-package DTO
+package dto
 
 type LoginRequest struct {
 	Identifier string `json:"identifier" validate:"required"`

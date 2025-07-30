@@ -1,7 +1,8 @@
 package database
 
 import (
-	"g6/blog-api/Domain"
+	domain "g6/blog-api/Domain"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -19,7 +20,7 @@ type UserDB struct {
 	UpdatedAt primitive.DateTime `bson:"updated_at"`
 }
 
-func FromUserEntityToDB(user *Domain.User) *UserDB {
+func FromUserEntityToDB(user *domain.User) *UserDB {
 	return &UserDB{
 		ID:        user.ID,
 		Username:  user.Username,
@@ -35,8 +36,8 @@ func FromUserEntityToDB(user *Domain.User) *UserDB {
 	}
 }
 
-func FromUserDBToEntity(userDB *UserDB) *Domain.User {
-	return &Domain.User{
+func FromUserDBToEntity(userDB *UserDB) *domain.User {
+	return &domain.User{
 		ID:        userDB.ID,
 		Username:  userDB.Username,
 		Email:     userDB.Email,
@@ -50,8 +51,8 @@ func FromUserDBToEntity(userDB *UserDB) *Domain.User {
 		UpdatedAt: userDB.UpdatedAt.Time(),
 	}
 }
-func FromUserDBListToEntityList(userDBs []*UserDB) []*Domain.User {
-	var users []*Domain.User
+func FromUserDBListToEntityList(userDBs []*UserDB) []*domain.User {
+	var users []*domain.User
 	for _, userDB := range userDBs {
 		users = append(users, FromUserDBToEntity(userDB))
 	}
