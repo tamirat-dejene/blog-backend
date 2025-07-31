@@ -28,6 +28,14 @@ type BlogCommentModel struct {
 	CreatedAt time.Time          `bson:"created_at"`
 }
 
+type BlogUserReactionModel struct {
+	ID        primitive.ObjectID `bson:"_id,omitempty"`
+	BlogID    primitive.ObjectID `bson:"blog_id"`
+	UserID    primitive.ObjectID `bson:"user_id"`
+	IsLike    bool               `bson:"is_like"`
+	CreatedAt time.Time          `bson:"created_at"`
+}
+
 // Convert to domain
 func BlogToDomain(blog *BlogModel) *domain.Blog {
 	return &domain.Blog{
@@ -113,5 +121,46 @@ func BlogCommentFromDomain(comment *domain.BlogComment) (*BlogCommentModel, erro
 		AuthorID:  authorID,
 		Comment:   comment.Comment,
 		CreatedAt: comment.CreatedAt,
+	}, nil
+}
+
+// Convert to domain
+func BlogUserReactionToDomain(reaction *BlogUserReactionModel) *domain.BlogUserReaction {
+	return &domain.BlogUserReaction{
+		ID:        reaction.BlogID.Hex(),
+		BlogID:    reaction.BlogID.Hex(),
+		UserID:    reaction.UserID.Hex(),
+		IsLike:    reaction.IsLike,
+		CreatedAt: reaction.CreatedAt,
+	}
+}
+
+func BlogUserReactionFromDomain(reaction *domain.BlogUserReaction) (*BlogUserReactionModel, error) {
+	userID, err := primitive.ObjectIDFromHex(reaction.UserID)
+	if err != nil {
+		return nil, err
+	}
+	blogID, err := primitive.ObjectIDFromHex(reaction.BlogID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var objectID primitive.ObjectID
+	if reaction.ID != "" {
+		objectID, err = primitive.ObjectIDFromHex(reaction.ID)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		objectID = primitive.NewObjectID()
+	}
+
+	return &BlogUserReactionModel{
+		ID:        objectID,
+		BlogID:    blogID,
+		UserID:    userID,
+		IsLike:    reaction.IsLike,
+		CreatedAt: reaction.CreatedAt,
 	}, nil
 }

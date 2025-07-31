@@ -5,6 +5,7 @@ import (
 	domain "g6/blog-api/Domain"
 	"g6/blog-api/Infrastructure/database/mongo"
 	"g6/blog-api/Infrastructure/database/mongo/mapper"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -55,7 +56,24 @@ func (b *blogRepo) Get(ctx context.Context, filter *domain.BlogFilter) ([]domain
 
 // Update implements domain.BlogRepository.
 func (b *blogRepo) Update(ctx context.Context, id string, blog domain.Blog) (domain.Blog, error) {
-	panic("unimplemented")
+	oid, err := primitive.ObjectIDFromHex(blog.ID)
+
+	if err != nil {
+		return domain.Blog{}, err
+	}
+	blog.UpdatedAt = time.Now()
+
+	update := bson.M{
+		"$set": bson.M{
+			"title":      blog.Title,
+			"content":    blog.Content,
+			"tags":       blog.Tags,
+			"updated_at": blog.UpdatedAt,
+		},
+	}
+
+	_, err = b.db.Collection(b.collection).UpdateOne(ctx, oid, update)
+	return domain.Blog{}, err
 }
 
 func NewBlogRepo(database mongo.Database, collection string) domain.BlogRepository {
