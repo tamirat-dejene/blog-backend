@@ -22,8 +22,7 @@ func Setup(env *bootstrap.Env, timeout time.Duration, db mongo.Database, router 
 		// authGroup.POST("/login", authHandler.Login)
 		// authGroup.POST("/register", authHandler.Register)
 	}
-	
-	
+
 	blogGroup := router.Group("/api/blogs") // Blog-related routes
 
 	blog_repo := repository.NewBlogRepo(db, env.BlogCollection)
@@ -34,6 +33,10 @@ func Setup(env *bootstrap.Env, timeout time.Duration, db mongo.Database, router 
 	}
 	blogGroup.GET("/", blog_controller.GetBlogs) // Get all blogs with optional filters
 	// ....
+	api := router.Group("/api/")
+	{
+		NewAuthRoutes(env, api, db)
+		NewUserRoutes(env, api, db)
+	}
 
-	
 }

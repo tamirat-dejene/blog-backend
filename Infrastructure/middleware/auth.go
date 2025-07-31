@@ -4,14 +4,14 @@ import (
 	"net/http"
 	"strings"
 
+	"g6/blog-api/Delivery/bootstrap"
 	domain "g6/blog-api/Domain"
-	"g6/blog-api/Infrastructure/security"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func AuthMiddleware() gin.HandlerFunc {
+func AuthMiddleware(env bootstrap.Env) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		header := c.GetHeader("Authorization")
 		if !strings.HasPrefix(header, "Bearer ") {
@@ -20,7 +20,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 		tokenStr := strings.TrimPrefix(header, "Bearer ")
 		token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
-			return []byte(security.GetAccessSecret()), nil
+			return []byte(env.ATS), nil
 		})
 
 		if err != nil || !token.Valid {
