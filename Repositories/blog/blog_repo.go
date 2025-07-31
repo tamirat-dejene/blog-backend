@@ -6,6 +6,7 @@ import (
 	"g6/blog-api/Infrastructure/database/mongo"
 	"g6/blog-api/Infrastructure/database/mongo/mapper"
 	"g6/blog-api/Infrastructure/database/mongo/utils"
+  
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -47,28 +48,47 @@ func (b *blogRepo) Get(ctx context.Context, filter *domain.BlogFilter) ([]domain
 	collection := b.db.Collection(b.collection)
 
 	query := utils.BuildBlogFilterQuery(filter)
-	opts := utils.PaginationOpts(filter.Page, filter.PageSize, filter.Recency)
+	var pipeline []bson.D
 
-	cursor, err := collection.Find(ctx, query, opts)
+	// Always start with a match stage
+	pipeline = append(pipeline, bson.D{{Key: "$match", Value: query}})
 
+	// If popularity is enabled, add sorting by computed popularity_score
+	if filter.Popular {
+		pipeline = append(pipeline, utils.PopularityStages()...)
+	} else {
+		// Otherwise, use recency-based sort
+		pipeline = append(pipeline, bson.D{{Key: "$sort", Value: utils.RecencySort(filter.Recency)}})
+	}
+
+	// Pagination stage
+	skip := max((filter.Page - 1) * filter.PageSize, 0)
+	if filter.PageSize <= 0 {
+		filter.PageSize = 10
+	}
+
+	pipeline = append(pipeline,
+		bson.D{{Key: "$skip", Value: skip}},
+		bson.D{{Key: "$limit", Value: filter.PageSize}},
+	)
+
+	cursor, err := collection.Aggregate(ctx, pipeline)
 	if err != nil {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
 
 	var results []mapper.BlogModel
-
 	if err = cursor.All(ctx, &results); err != nil {
 		return nil, err
 	}
 
 	blogs := make([]domain.Blog, 0, len(results))
-	for i, bm := range results {
-		blogs[i] = *mapper.BlogToDomain(&bm)
-
+	for _, bm := range results {
+		blogs = append(blogs, *mapper.BlogToDomain(&bm))
 	}
 
-	return blogs, err
+	return blogs, nil
 }
 
 // Update implements domain.BlogRepository.

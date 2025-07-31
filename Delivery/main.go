@@ -16,7 +16,7 @@ import (
 // main.go - Entry point for the blog backend server. Handles server startup and graceful shutdown.
 
 func close_server(srv *http.Server) {
-	quit := make(chan os.Signal)
+	quit := make(chan os.Signal, 1)
 
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
