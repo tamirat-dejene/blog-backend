@@ -5,6 +5,9 @@ import (
 	domain "g6/blog-api/Domain"
 	"g6/blog-api/Infrastructure/database/mongo"
 	"g6/blog-api/Infrastructure/database/mongo/mapper"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type blogRepo struct {
@@ -28,7 +31,13 @@ func (b *blogRepo) Create(ctx context.Context, blog *domain.Blog) (*domain.Blog,
 
 // Delete implements domain.BlogRepository.
 func (b *blogRepo) Delete(ctx context.Context, id string) error {
-	panic("unimplemented")
+	oid, err := primitive.ObjectIDFromHex(id)
+
+	if err != nil {
+		return err
+	}
+	_, err = b.db.Collection(b.collection).DeleteOne(ctx, bson.M{"_id": oid})
+	return err
 }
 
 // Get implements domain.BlogRepository.
