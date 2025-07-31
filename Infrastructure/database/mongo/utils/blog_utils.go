@@ -63,24 +63,16 @@ func BuildBlogFilterQuery(filter *domain.BlogFilter) bson.M {
 	return query
 }
 
-// popularity score pipeline
-
-// PopularityStages returns MongoDB aggregation stages for computing and sorting by popularity score.
-func PopularityStages() []bson.D {
-	return []bson.D{
-		{{
-			Key: "$addFields", Value: bson.M{
-				"popularity_score": bson.M{
-					"$add": bson.A{
-						"$comment_count",
-						"$likes",
-						bson.M{"$multiply": bson.A{-1, "$dislikes"}},
-					},
-				},
-			},
-		}},
-		{{
-			Key: "$sort", Value: bson.M{"popularity_score": -1},
-		}},
+// CalculatePopularityScore computes the popularity score based on likes, views, comments, and dislikes.
+func CalculatePopularityScore(likes, views, comments, dislikes int) float64 {
+	raw := (float64(likes) * 3.0) + (float64(views) * 2.0) + (float64(comments) * 1.5) - (float64(dislikes) * 2.5)
+	maxScore := 50000.0  // assumed maximum score for normalization
+	normalized := (raw / maxScore) * 100
+	if normalized < 0 {
+		return 0
 	}
+	if normalized > 100 {
+		return 100
+	}
+	return normalized
 }

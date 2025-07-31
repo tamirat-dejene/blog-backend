@@ -6,17 +6,19 @@ import (
 )
 
 type Blog struct {
-	ID           string
-	Title        string
-	Content      string
-	AuthorID     string
-	Tags         []string
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-	Likes        int
-	Dislikes     int
-	ViewCount    int
-	CommentCount int // for easy access to comment count
+	ID              string
+	Title           string
+	Content         string
+	AuthorID        string
+	AuthorName      string // for easy access to author's name: first_name + last_name
+	Tags            []string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	Likes           int
+	Dislikes        int
+	ViewCount       int
+	CommentCount    int // for easy access to comment count
+	PopularityScore int // computed popularity score : score =  Normalized((likes * 3) + (views * 2) + (comments * 1.5) - (dislikes * 2.5))
 }
 
 type BlogComment struct {
