@@ -5,6 +5,7 @@ import (
 	domain "g6/blog-api/Domain"
 	"g6/blog-api/Infrastructure/database/mongo"
 	"g6/blog-api/Infrastructure/database/mongo/mapper"
+	"g6/blog-api/Infrastructure/database/mongo/utils"
 )
 
 type blogRepo struct {
@@ -33,12 +34,28 @@ func (b *blogRepo) Delete(ctx context.Context, id string) error {
 
 // Get implements domain.BlogRepository.
 func (b *blogRepo) Get(ctx context.Context, filter *domain.BlogFilter) ([]domain.Blog, error) {
-	var blogs []domain.Blog
-	var err error
+	collection := b.db.Collection(b.collection)
 
-	if filter != nil {
-		// Apply filtering logic here
-		// For example, you can use filter.Page, filter.PageSize, etc.
+	query := utils.BuildBlogFilterQuery(filter)
+	opts := utils.PaginationOpts(filter.Page, filter.PageSize, filter.Recency)
+
+	cursor, err := collection.Find(ctx, query, opts)
+
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var results []mapper.BlogModel
+
+	if err = cursor.All(ctx, &results); err != nil {
+		return nil, err
+	}
+
+	blogs := make([]domain.Blog, 0, len(results))
+	for i, bm := range results {
+		blogs[i] = *mapper.BlogToDomain(&bm)
+
 	}
 
 	return blogs, err
