@@ -28,6 +28,12 @@ type Env struct {
 	BlogCommentCollection string `mapstructure:"BLOG_COMMENT_COLLECTION"`
 	// blog user reaction defaults
 	BlogUserReactionCollection string `mapstructure:"BLOG_USER_REACTION_COLLECTION"`
+
+	// user collection
+	UserCollection string `mapstructure:"USER_COLLECTION"`
+
+	// user refresh token collection
+	RefreshTokenCollection string `mapstructure:"REFRESH_TOKEN_COLLECTION"`
 }
 
 // Viper can be made injectable
