@@ -53,12 +53,14 @@ func (b *blogRepo) Get(ctx context.Context, filter *domain.BlogFilter) ([]domain
 	// Always start with a match stage
 	pipeline = append(pipeline, bson.D{{Key: "$match", Value: query}})
 
-	// If popularity is enabled, add sorting by computed popularity_score
-	if filter.Popular {
-		pipeline = append(pipeline, utils.PopularityStages()...)
-	} else {
-		// Otherwise, use recency-based sort
+	// Sorting logic
+	switch {
+	case filter.Popular:
+		pipeline = append(pipeline, bson.D{{Key: "$sort", Value: bson.D{{Key: "popularity_score", Value: -1}}}})
+	case filter.Recency != "":
 		pipeline = append(pipeline, bson.D{{Key: "$sort", Value: utils.RecencySort(filter.Recency)}})
+	default:
+		pipeline = append(pipeline, bson.D{{Key: "$sort", Value: bson.D{{Key: "created_at", Value: -1}}}})
 	}
 
 	// Pagination stage

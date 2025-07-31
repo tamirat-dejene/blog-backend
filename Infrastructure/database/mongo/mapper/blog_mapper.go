@@ -8,17 +8,19 @@ import (
 )
 
 type BlogModel struct {
-	ID           primitive.ObjectID `bson:"_id,omitempty"`
-	Title        string             `bson:"title"`
-	Content      string             `bson:"content"`
-	AuthorID     primitive.ObjectID `bson:"author_id"`
-	Tags         []string           `bson:"tags,omitempty"`
-	CreatedAt    time.Time          `bson:"created_at"`
-	UpdatedAt    time.Time          `bson:"updated_at"`
-	Likes        int                `bson:"likes"`
-	Dislikes     int                `bson:"dislikes"`
-	ViewCount    int                `bson:"view_count"`
-	CommentCount int                `bson:"comment_count"` // for easy access to comment count
+	ID              primitive.ObjectID `bson:"_id,omitempty"`
+	Title           string             `bson:"title"`
+	Content         string             `bson:"content"`
+	AuthorID        primitive.ObjectID `bson:"author_id"`
+	AuthorName      string             `bson:"author_name"` // for easy access to author's name: first_name + last_name
+	Tags            []string           `bson:"tags,omitempty"`
+	CreatedAt       time.Time          `bson:"created_at"`
+	UpdatedAt       time.Time          `bson:"updated_at"`
+	Likes           int                `bson:"likes"`
+	Dislikes        int                `bson:"dislikes"`
+	ViewCount       int                `bson:"view_count"`
+	CommentCount    int                `bson:"comment_count"`    // for easy access to comment count
+	PopularityScore int                `bson:"popularity_score"` // computed popularity score
 }
 
 type BlogCommentModel struct {
