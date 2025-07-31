@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -81,6 +82,7 @@ func ErrNoDocuments() error {
 
 func NewClient(uri string) (Client, error) {
 	time.Local = time.UTC
+	fmt.Println(uri)
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
 	if err != nil {
 		return nil, err
