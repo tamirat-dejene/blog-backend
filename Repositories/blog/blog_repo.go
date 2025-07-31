@@ -5,6 +5,12 @@ import (
 	domain "g6/blog-api/Domain"
 	"g6/blog-api/Infrastructure/database/mongo"
 	"g6/blog-api/Infrastructure/database/mongo/mapper"
+	"g6/blog-api/Infrastructure/database/mongo/utils"
+  
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type blogRepo struct {
@@ -28,25 +34,83 @@ func (b *blogRepo) Create(ctx context.Context, blog *domain.Blog) (*domain.Blog,
 
 // Delete implements domain.BlogRepository.
 func (b *blogRepo) Delete(ctx context.Context, id string) error {
-	panic("unimplemented")
+	oid, err := primitive.ObjectIDFromHex(id)
+
+	if err != nil {
+		return err
+	}
+	_, err = b.db.Collection(b.collection).DeleteOne(ctx, bson.M{"_id": oid})
+	return err
 }
 
 // Get implements domain.BlogRepository.
 func (b *blogRepo) Get(ctx context.Context, filter *domain.BlogFilter) ([]domain.Blog, error) {
-	var blogs []domain.Blog
-	var err error
+	collection := b.db.Collection(b.collection)
 
-	if filter != nil {
-		// Apply filtering logic here
-		// For example, you can use filter.Page, filter.PageSize, etc.
+	query := utils.BuildBlogFilterQuery(filter)
+	var pipeline []bson.D
+
+	// Always start with a match stage
+	pipeline = append(pipeline, bson.D{{Key: "$match", Value: query}})
+
+	// If popularity is enabled, add sorting by computed popularity_score
+	if filter.Popular {
+		pipeline = append(pipeline, utils.PopularityStages()...)
+	} else {
+		// Otherwise, use recency-based sort
+		pipeline = append(pipeline, bson.D{{Key: "$sort", Value: utils.RecencySort(filter.Recency)}})
 	}
 
-	return blogs, err
+	// Pagination stage
+	skip := max((filter.Page - 1) * filter.PageSize, 0)
+	if filter.PageSize <= 0 {
+		filter.PageSize = 10
+	}
+
+	pipeline = append(pipeline,
+		bson.D{{Key: "$skip", Value: skip}},
+		bson.D{{Key: "$limit", Value: filter.PageSize}},
+	)
+
+	cursor, err := collection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var results []mapper.BlogModel
+	if err = cursor.All(ctx, &results); err != nil {
+		return nil, err
+	}
+
+	blogs := make([]domain.Blog, 0, len(results))
+	for _, bm := range results {
+		blogs = append(blogs, *mapper.BlogToDomain(&bm))
+	}
+
+	return blogs, nil
 }
 
 // Update implements domain.BlogRepository.
 func (b *blogRepo) Update(ctx context.Context, id string, blog domain.Blog) (domain.Blog, error) {
-	panic("unimplemented")
+	oid, err := primitive.ObjectIDFromHex(blog.ID)
+
+	if err != nil {
+		return domain.Blog{}, err
+	}
+	blog.UpdatedAt = time.Now()
+
+	update := bson.M{
+		"$set": bson.M{
+			"title":      blog.Title,
+			"content":    blog.Content,
+			"tags":       blog.Tags,
+			"updated_at": blog.UpdatedAt,
+		},
+	}
+
+	_, err = b.db.Collection(b.collection).UpdateOne(ctx, oid, update)
+	return domain.Blog{}, err
 }
 
 func NewBlogRepo(database mongo.Database, collection string) domain.BlogRepository {

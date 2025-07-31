@@ -1,34 +1,43 @@
 package controllers
-import(
+
+import (
 	"net/http"
+
 	"g6/blog-api/Delivery/dto"
-	usecases "g6/blog-api/Usecases"
+	domain "g6/blog-api/Domain"
+	
+
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
+var validate = validator.New()
+
 type UserController struct {
-	uc usecases.UserUsecase
+	uc domain.IUserUsecase
 }
 
-func NewUserController(uc usecases.UserUsecase) *UserController {
-	return &UserController{uc}
+func NewUserController(uc domain.IUserUsecase) *UserController {
+	return &UserController{uc: uc}
 }
 
 func (ctrl *UserController) Register(ctx *gin.Context) {
-	var req dto.RegisterRequest
+	var req dto.UserRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
-	if err := ctrl.uc.Register(req); err != nil {
+
+	user := dto.ToDomainUser(req)
+	if err := ctrl.uc.Register(&user); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
-	}	
-	ctx.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
-}	
+	}
 
-//Login
-//Logout
+	ctx.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
+}
+
+
 func (ctrl *UserController) Logout(ctx *gin.Context) {
 	userID := ctx.Param("userID")
 	if err := ctrl.uc.Logout(userID); err != nil {
@@ -46,8 +55,12 @@ func (ctrl *UserController) ChangeRole(ctx *gin.Context) {
 	}
 	initiator := ctx.GetString("role")
 	target := ctx.Param("userID")
-	if err := ctrl.uc.ChangeRole(initiator, target, req); err != nil{
+	user := domain.User{
+		Role: domain.UserRole(req.Role),
+	}
+	if err := ctrl.uc.ChangeRole(initiator, target, user); err != nil {
 		ctx.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"message": "User role changed successfully"})
 }

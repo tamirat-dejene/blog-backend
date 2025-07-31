@@ -3,29 +3,29 @@ package usecases
 import (
 	"context"
 	"errors"
-	repositories "g6/blog-api/Repositories"
 	domain "g6/blog-api/Domain"
-	"g6/blog-api/Delivery/dto"
 	"g6/blog-api/Infrastructure/security"
+	"regexp"
 	"time"
 )
 
-type userUsecase struct {
-	userRepo   repositories.UserRepository
+type UserUsecase struct {
+	userRepo   domain.IUserRepository
 	ctxtimeout time.Duration
 }
 
-func NewUserUsecase(userRepo repositories.UserRepository, timeout time.Duration) *userUsecase {
-	return &userUsecase{
+func NewUserUsecase(userRepo domain.IUserRepository, timeout time.Duration) domain.IUserUsecase {
+	return &UserUsecase{
 		userRepo:   userRepo,
 		ctxtimeout: timeout,
 	}
 }
 
-func (uc *userUsecase) Register(request dto.RegisterRequest) error{
+func (uc *UserUsecase) Register(request *domain.User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), uc.ctxtimeout)
 	defer cancel()
 
+	request.Role = domain.RoleUser // Default role is User
 	if _, err := uc.userRepo.FindByUsernameOrEmail(ctx, request.Username); err == nil {
 		return errors.New("username already exists")
 	}
@@ -33,45 +33,45 @@ func (uc *userUsecase) Register(request dto.RegisterRequest) error{
 		return errors.New("email already exists")
 	}
 	hashed, _ := security.HashPassword(request.Password)
-	now := time.Now()
-	user := domain.User{
-		Username:       request.Username,	
-		Email:          request.Email,
-		FirstName:      request.FirstName,
-		LastName:       request.LastName,
-		Password:       hashed,
-		Role:           domain.RoleUser,
-		Bio:            request.Bio,		
-		ProfilePicture: request.ProfilePicture,
-		CreatedAt:      now,		
-		UpdatedAt:      now,
-	}
-	return uc.userRepo.Create(ctx, user)
+	request.Password = hashed
+	request.CreatedAt = time.Now()
+	request.UpdatedAt = time.Now()
+	return uc.userRepo.CreateUser(ctx, request)
 }
 
-//Login 
-//Logout
-func (uc *userUsecase) Logout(userID string) error{
+// Login
+// Logout
+func (uc *UserUsecase) Logout(userID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), uc.ctxtimeout)
 	defer cancel()
-    
+
 	return uc.userRepo.InvalidateTokens(ctx, userID)
 }
 
-func (uc *userUsecase) ChangeRole(initiatorRole string, targetUserID string, request dto.ChangeRoleRequest) error{
+func (uc *UserUsecase) ChangeRole(initiatorRole string, targetUserID string, request domain.User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), uc.ctxtimeout)
 	defer cancel()
 
-	ir := domain.Role(initiatorRole)
-	tr := domain.Role(request.Role)
-  
-	if ir == domain.RoleAdmin && tr == domain.RoleAdmin{
+	if domain.UserRole(initiatorRole) == domain.RoleAdmin && domain.UserRole(request.Role) == domain.RoleAdmin {
 		return errors.New("only superadmin can promote/ demote admin")
 	}
 	// Only superadmin and admin can change roles
-	if ir != domain.RoleSuperAdmin && ir != domain.RoleAdmin {
+	if domain.UserRole(initiatorRole) != domain.RoleSuperAdmin && domain.UserRole(initiatorRole) != domain.RoleAdmin {
 		return errors.New("insufficient privileges")
 	}
-	return uc.userRepo.ChangeRole(ctx, targetUserID, tr)
+	return uc.userRepo.ChangeRole(ctx, targetUserID, string(domain.UserRole(request.Role)), request.Username)
 }
 
+// find user by username or id
+func (uc *UserUsecase) FindByUsernameOrEmail(ctx context.Context, identifier string) (*domain.User, error) {
+	emailRegex := `^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`
+	isEmail, _ := regexp.MatchString(emailRegex, identifier)
+	var user *domain.User
+	var err error
+	if isEmail {
+		user, err = uc.userRepo.GetUserByEmail(ctx, identifier)
+	} else {
+		user, err = uc.userRepo.GetUserByUsername(ctx, identifier)
+	}
+	return user, err
+}

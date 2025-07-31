@@ -4,20 +4,19 @@ import (
 	"context"
 	"g6/blog-api/Delivery/bootstrap"
 	"g6/blog-api/Delivery/routers"
+	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
 // main.go - Entry point for the blog backend server. Handles server startup and graceful shutdown.
 
 func close_server(srv *http.Server) {
-	quit := make(chan os.Signal)
+	quit := make(chan os.Signal, 1)
 
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
