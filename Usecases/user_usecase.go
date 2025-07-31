@@ -9,19 +9,19 @@ import (
 	"time"
 )
 
-type userUsecase struct {
+type UserUsecase struct {
 	userRepo   domain.IUserRepository
 	ctxtimeout time.Duration
 }
 
 func NewUserUsecase(userRepo domain.IUserRepository, timeout time.Duration) domain.IUserUsecase {
-	return &userUsecase{
+	return &UserUsecase{
 		userRepo:   userRepo,
 		ctxtimeout: timeout,
 	}
 }
 
-func (uc *userUsecase) Register(request *domain.User) error {
+func (uc *UserUsecase) Register(request *domain.User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), uc.ctxtimeout)
 	defer cancel()
 
@@ -41,14 +41,14 @@ func (uc *userUsecase) Register(request *domain.User) error {
 
 // Login
 // Logout
-func (uc *userUsecase) Logout(userID string) error {
+func (uc *UserUsecase) Logout(userID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), uc.ctxtimeout)
 	defer cancel()
 
 	return uc.userRepo.InvalidateTokens(ctx, userID)
 }
 
-func (uc *userUsecase) ChangeRole(initiatorRole string, targetUserID string, request domain.User) error {
+func (uc *UserUsecase) ChangeRole(initiatorRole string, targetUserID string, request domain.User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), uc.ctxtimeout)
 	defer cancel()
 
@@ -63,7 +63,7 @@ func (uc *userUsecase) ChangeRole(initiatorRole string, targetUserID string, req
 }
 
 // find user by username or id
-func (uc *userUsecase) FindByUsernameOrEmail(ctx context.Context, identifier string) (*domain.User, error) {
+func (uc *UserUsecase) FindByUsernameOrEmail(ctx context.Context, identifier string) (*domain.User, error) {
 	emailRegex := `^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`
 	isEmail, _ := regexp.MatchString(emailRegex, identifier)
 	var user *domain.User
