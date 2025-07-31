@@ -11,7 +11,7 @@ type Env struct {
 	Port         string `mapstructure:"PORT"`
 	AppEnv       string `mapstructure:"APP_ENV"`
 	DB_Uri       string `mapstructure:"DB_URI"`
-	DB_Name       string `mapstructure:"DB_NAME"`
+	DB_Name      string `mapstructure:"DB_NAME"`
 	RTS          string `mapstructure:"REFRESH_TOKEN_SECRET"`
 	ATS          string `mapstructure:"ACCESS_TOKEN_SECRET"`
 	RefTEHours   int    `mapstructure:"REFRESH_TOKEN_EXPIRE_HOURS"`
@@ -19,9 +19,9 @@ type Env struct {
 	CtxTSeconds  int    `mapstructure:"CONTEXT_TIMEOUT_SECONDS"`
 
 	// blog defaults
-	Page int `mapstructure:"PAGE"`
-	PageSize int `mapstructure:"PAGE_SIZE"`
-	Recency string `mapstructure:"RECENCY"`
+	Page           int    `mapstructure:"PAGE"`
+	PageSize       int    `mapstructure:"PAGE_SIZE"`
+	Recency        string `mapstructure:"RECENCY"`
 	BlogCollection string `mapstructure:"BLOG_COLLECTION"`
 
 	// blog comment defaults
