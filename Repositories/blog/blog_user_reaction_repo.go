@@ -2,13 +2,14 @@ package repository
 
 import (
 	"context"
+	"errors"
 	domain "g6/blog-api/Domain"
 	"g6/blog-api/Infrastructure/database/mongo"
 	"g6/blog-api/Infrastructure/database/mongo/mapper"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type BlogUserReactionRepo struct {
@@ -24,6 +25,7 @@ func NewUserReactionRepo(database mongo.Database, collection string) domain.Blog
 }
 
 func (u *BlogUserReactionRepo) Create(ctx context.Context, reaction domain.BlogUserReaction) (domain.BlogUserReaction, error) {
+	// Convert domain model to Mongo model
 	blogReaction, err := mapper.BlogUserReactionFromDomain(&reaction)
 
 	if err != nil {
@@ -33,30 +35,129 @@ func (u *BlogUserReactionRepo) Create(ctx context.Context, reaction domain.BlogU
 		"blog_id": blogReaction.BlogID,
 		"user_id": blogReaction.UserID,
 	}
+
+	var existing mapper.BlogUserReactionModel
+
+	// Check for existing reaction
+	duplicateErr := u.db.Collection(u.collection).FindOne(ctx, filter).Decode(&existing)
+
+	blogCollection := u.db.Collection("posts")
+	blogFilter := bson.M{"_id": blogReaction.BlogID}
+
+	if duplicateErr == mongo.ErrNoDocuments() {
+
+		// No existing record, insert new
+		reaction.CreatedAt = time.Now()
+		_, err = u.db.Collection(u.collection).InsertOne(ctx, blogReaction)
+
+		if err != nil {
+			return domain.BlogUserReaction{}, nil
+		}
+
+		//Increment like or dislike
+		counterField := "likes"
+		if !reaction.IsLike {
+			counterField = "dislikes"
+		}
+		_, _ = blogCollection.UpdateOne(ctx, blogFilter, bson.M{
+			"$inc": bson.M{counterField: 1},
+		})
+
+		response := mapper.BlogUserReactionToDomain(blogReaction)
+
+		return *response, nil
+	} else if duplicateErr != nil {
+
+		// Other errors when fetching
+		return domain.BlogUserReaction{}, err
+	}
+
+	// Reaction exists: if same reaction type, just return existing
+	if existing.IsLike == reaction.IsLike {
+		response := mapper.BlogUserReactionToDomain(&existing)
+
+		return *response, nil
+	}
+
+	// Different reaction: update it
 	update := bson.M{
 		"$set": bson.M{
 			"is_like":    reaction.IsLike,
 			"created_at": time.Now(),
 		},
 	}
-	opt := options.Update().SetUpsert(true)
 
-	_, err = u.db.Collection(u.collection).UpdateOne(ctx, filter, update, opt)
+	_, err = u.db.Collection(u.collection).UpdateOne(ctx, filter, update)
 
 	if err != nil {
 		return domain.BlogUserReaction{}, err
 	}
-	res := mapper.BlogUserReactionToDomain(blogReaction)
 
-	return *res, nil
-
+	// Decrement the old increment the new
+	inc := bson.M{
+		"likes":    0,
+		"dislikes": 0,
+	}
+	if reaction.IsLike {
+		inc["likes"] = 1
+		inc["dislikes"] = -1
+	} else {
+		inc["likes"] = -1
+		inc["dislikes"] = 1
+	}
+	_, _ = blogCollection.UpdateOne(ctx, blogFilter, bson.M{
+		"$inc": inc,
+	})
+	// Update local copy's timestamp for return
+	reaction.CreatedAt = time.Now()
+	return reaction, nil
 }
 
 func (u *BlogUserReactionRepo) Delete(ctx context.Context, id string) error {
-	// to be implemented
+	oid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	var reaction mapper.BlogUserReactionModel
+	err = u.db.Collection(u.collection).FindOne(ctx, bson.M{"_id": oid}).Decode(&reaction)
+	if err != nil {
+		return err
+	}
+	_, err = u.db.Collection(u.collection).DeleteOne(ctx, bson.M{"_id": oid})
+	if err != nil {
+		return err
+	}
+
+	//decrement the correct count
+	decField := "likes"
+	if !reaction.IsLike {
+		decField = "dislikes"
+	}
+	_, err = u.db.Collection("blogs").UpdateOne(ctx, bson.M{"_id": reaction.BlogID}, bson.M{
+		"$inc": bson.M{decField: -1},
+	})
+	if err != nil {
+		return err
+	}
 	return nil
 }
+
 func (u *BlogUserReactionRepo) GetUserReaction(ctx context.Context, blogID, userID string) (domain.BlogUserReaction, error) {
-	// to be implemented
-	return domain.BlogUserReaction{}, nil
+
+	filter := bson.M{"blog_id": blogID, "user_id": userID}
+
+	var reaction mapper.BlogUserReactionModel
+
+	err := u.db.Collection(u.collection).FindOne(ctx, filter).Decode(&reaction)
+
+	if err != nil {
+		if err == mongo.ErrNoDocuments() {
+			return domain.BlogUserReaction{}, errors.New("no reaction found")
+		}
+		return domain.BlogUserReaction{}, err
+	}
+
+	response := mapper.BlogUserReactionToDomain(&reaction)
+	return *response, nil
 }
