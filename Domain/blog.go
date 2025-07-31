@@ -50,6 +50,7 @@ type BlogFilter struct {
 	Tags       []string
 	AuthorName string
 	Title      string
+	Popular    bool // indicates if the filter is for most popular blogs
 }
 
 // Repository Interfaces provide an abstraction layer for data access operations related to blogs, comments, and user reactions.

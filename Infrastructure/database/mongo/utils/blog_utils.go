@@ -20,18 +20,18 @@ func RecencySort(recency domain.Recency) bson.D {
 }
 
 // PaginationOpts returns MongoDB options for pagination based on the provided page, pageSize, and recency.
-func PaginationOpts(page, pageSize int, recency domain.Recency) *options.FindOptions {
+func PaginationOpts(page, page_size int, recency domain.Recency) *options.FindOptions {
 	if page <= 0 {
 		page = 1
 	}
-	if pageSize <= 0 {
-		pageSize = 10
+	if page_size <= 0 {
+		page_size = 10
 	}
-	skip := int64((page - 1) * pageSize)
+	skip := int64((page - 1) * page_size)
 
 	return options.Find().
 		SetSkip(skip).
-		SetLimit(int64(pageSize)).
+		SetLimit(int64(page_size)).
 		SetSort(RecencySort(recency))
 }
 
@@ -61,4 +61,26 @@ func BuildBlogFilterQuery(filter *domain.BlogFilter) bson.M {
 	}
 
 	return query
+}
+
+// popularity score pipeline
+
+// PopularityStages returns MongoDB aggregation stages for computing and sorting by popularity score.
+func PopularityStages() []bson.D {
+	return []bson.D{
+		{{
+			Key: "$addFields", Value: bson.M{
+				"popularity_score": bson.M{
+					"$add": bson.A{
+						"$comment_count",
+						"$likes",
+						bson.M{"$multiply": bson.A{-1, "$dislikes"}},
+					},
+				},
+			},
+		}},
+		{{
+			Key: "$sort", Value: bson.M{"popularity_score": -1},
+		}},
+	}
 }
