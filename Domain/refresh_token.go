@@ -7,10 +7,20 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+type PasswordResetToken struct {
+	ID        string
+	Email     string
+	TokenHash string
+	RateLimit int
+	ExpiresAt time.Time
+	Used      bool
+}
+
 type RefreshToken struct {
 	Token     string
 	UserID    string
 	ExpiresAt time.Time
+	Revoked   bool
 	CreatedAt time.Time
 }
 
@@ -30,10 +40,28 @@ type IRefreshTokenUsecase interface {
 	FindByToken(token string) (*RefreshToken, error)
 	Save(token *RefreshToken) error
 	DeleteByUserID(userID string) error
+	ReplaceToken(token *RefreshToken) error
+	RevokedToken(token *RefreshToken) error
+	FindByUserID(id string) (*RefreshToken, error)
 }
 
 type IRefreshTokenRepository interface {
 	Save(ctx context.Context, token *RefreshToken) error
 	FindByToken(ctx context.Context, token string) (*RefreshToken, error)
 	DeleteByUserID(ctx context.Context, userID string) error
+	ReplaceTokenByUserID(ctx context.Context, token *RefreshToken) error
+	RevokeToken(ctx context.Context, token string) error
+	FindTokenByUserID(ctx context.Context, token string) (*RefreshToken, error)
+}
+
+type IPasswordResetUsecase interface {
+	SaveResetToken(email string) error
+	FindByEmail(email string) (*PasswordResetToken, error)
+	MarkAsUsed(token *PasswordResetToken) error
+}
+
+type IPasswordResetRepository interface {
+	SaveResetToken(ctx context.Context, token *PasswordResetToken) error
+	FindByEmail(ctx context.Context, email string) (*PasswordResetToken, error)
+	MarkAsUsed(ctx context.Context, token *PasswordResetToken) error
 }

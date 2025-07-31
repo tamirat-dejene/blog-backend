@@ -75,3 +75,15 @@ func (uc *userUsecase) FindByUsernameOrEmail(ctx context.Context, identifier str
 	}
 	return user, err
 }
+
+func (uc *userUsecase) FindUserByID(uid string) (*domain.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), uc.ctxtimeout)
+	defer cancel()
+	return uc.userRepo.FindUserByID(ctx, uid)
+}
+
+func (uc *userUsecase) GetUserByEmail(email string) (*domain.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), uc.ctxtimeout)
+	defer cancel()
+	return uc.userRepo.GetUserByEmail(ctx, email)
+}

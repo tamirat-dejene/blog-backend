@@ -57,6 +57,22 @@ func (repo *UserRepository) GetAllUsers(ctx context.Context) ([]*domain.User, er
 	return mapper.UserToDomainList(users), nil
 }
 
+func (repo *UserRepository) FindUserByID(ctx context.Context, id string) (*domain.User, error) {
+	uid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user ID: %v", err)
+	}
+	var userModel *mapper.UserModel
+	err = repo.DB.Collection(repo.Collection).FindOne(ctx, bson.M{"_id": uid}).Decode(&userModel)
+	if err != nil {
+		if err == mongo.ErrNoDocuments() {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, err
+	}
+	return mapper.UserToDomain(userModel), nil
+}
+
 func (repo *UserRepository) GetUserByUsername(ctx context.Context, username string) (*domain.User, error) {
 	var userModel *mapper.UserModel
 	err := repo.DB.Collection(repo.Collection).FindOne(ctx, bson.M{"username": bson.M{"$regex": username, "$options": "i"}}).Decode(&userModel)

@@ -31,8 +31,9 @@ const (
 
 type IUserUsecase interface {
 	FindByUsernameOrEmail(context.Context, string) (*User, error)
+	FindUserByID(string) (*User, error)
 	// GetUserByUsername(username string) (*User, error)
-	// GetUserByEmail(email string) (*User, error)
+	GetUserByEmail(email string) (*User, error)
 	// UpdateUser(id primitive.ObjectID, user *User) (*User, error)
 	// DeleteUser(id primitive.ObjectID) error
 	// GetAllUsers() ([]*User, error)
@@ -45,6 +46,7 @@ type IUserUsecase interface {
 
 type IUserRepository interface {
 	CreateUser(context.Context, *User) error
+	FindUserByID(context.Context, string) (*User, error)
 	GetUserByUsername(context.Context, string) (*User, error)
 	GetUserByEmail(context.Context, string) (*User, error)
 	// UpdateUser(id primitive.ObjectID, user *User) error

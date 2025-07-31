@@ -34,18 +34,12 @@ type Env struct {
 
 	// user refresh token collection
 	RefreshTokenCollection string `mapstructure:"REFRESH_TOKEN_COLLECTION"`
-
-	// password reset token collection
-	PasswordResetCollection string `mapstructure:"PASSWORD_RESET_COLLECTION"`
-	// password reset token expiry
-	PasswordResetExpiry int `mapstructure:"PASSWORD_RESET_EXPIRY"` // in minutes
 }
 
 // Viper can be made injectable
 func NewEnv(env_file_path string) (*Env, error) {
 	v := viper.New()
 	v.SetConfigFile(env_file_path)
-
 	if err := v.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
