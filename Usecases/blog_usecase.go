@@ -26,19 +26,20 @@ func (b *blogUsecase) DeleteBlog(ctx context.Context, id string) error {
 	panic("unimplemented")
 }
 
-// GetAllBlogs implements domain.BlogUsecase.
-func (b *blogUsecase) GetAllBlogs(ctx context.Context) ([]domain.Blog, error) {
-	panic("unimplemented")
-}
+// GetBlogs implements domain.BlogUsecase.
+func (b *blogUsecase) GetBlogs(ctx context.Context, filter *domain.BlogFilter) ([]domain.Blog, error) {
+	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
+	defer cancel()
 
-// GetBlogsByTitle implements domain.BlogUsecase.
-func (b *blogUsecase) GetBlogsByTitle(ctx context.Context, title string) ([]domain.Blog, error) {
-	panic("unimplemented")
+	return b.blogRepo.Get(c, filter)
 }
 
 // UpdateBlog implements domain.BlogUsecase.
 func (b *blogUsecase) UpdateBlog(ctx context.Context, id string, blog domain.Blog) (domain.Blog, error) {
-	panic("unimplemented")
+	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
+	defer cancel()
+
+	return b.blogRepo.Update(c, id, blog)
 }
 
 func NewBlogUsecase(blogRepo domain.BlogRepository, timeout time.Duration) domain.BlogUsecase {

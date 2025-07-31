@@ -17,6 +17,17 @@ type Env struct {
 	RefTEHours   int    `mapstructure:"REFRESH_TOKEN_EXPIRE_HOURS"`
 	AccTEMinutes int    `mapstructure:"ACCESS_TOKEN_EXPIRE_MINUTES"`
 	CtxTSeconds  int    `mapstructure:"CONTEXT_TIMEOUT_SECONDS"`
+
+	// blog defaults
+	Page int `mapstructure:"PAGE"`
+	PageSize int `mapstructure:"PAGE_SIZE"`
+	Recency string `mapstructure:"RECENCY"`
+	BlogCollection string `mapstructure:"BLOG_COLLECTION"`
+
+	// blog comment defaults
+	BlogCommentCollection string `mapstructure:"BLOG_COMMENT_COLLECTION"`
+	// blog user reaction defaults
+	BlogUserReactionCollection string `mapstructure:"BLOG_USER_REACTION_COLLECTION"`
 }
 
 // Viper can be made injectable
