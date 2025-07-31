@@ -10,14 +10,15 @@ type BlogRequest struct {
 }
 
 type BlogResponse struct {
-	ID        string    `json:"id"`
-	Title     string    `json:"title"`
-	Content   string    `json:"content"`
-	AuthorID  string    `json:"author_id"`
-	Tags      []string  `json:"tags,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Likes     int       `json:"likes"`
-	Dislikes  int       `json:"dislikes"`
-	ViewCount int       `json:"view_count"`
+	ID           string    `json:"id"`
+	Title        string    `json:"title"`
+	Content      string    `json:"content"`
+	AuthorID     string    `json:"author_id"`
+	Tags         []string  `json:"tags,omitempty"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	Likes        int       `json:"likes"`
+	Dislikes     int       `json:"dislikes"`
+	ViewCount    int       `json:"view_count"`
+	CommentCount int       `json:"comment_count"` // for easy access to comment count
 }
