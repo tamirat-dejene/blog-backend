@@ -6,16 +6,17 @@ import (
 )
 
 type Blog struct {
-	ID        string
-	Title     string
-	Content   string
-	AuthorID  string
-	Tags      []string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	Likes     int
-	Dislikes  int
-	ViewCount int
+	ID           string
+	Title        string
+	Content      string
+	AuthorID     string
+	Tags         []string
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	Likes        int
+	Dislikes     int
+	ViewCount    int
+	CommentCount int // for easy access to comment count
 }
 
 type BlogComment struct {
@@ -43,12 +44,12 @@ const (
 )
 
 type BlogFilter struct {
-	Page     int
-	PageSize int
-	Recency  Recency
-	Tags     []string
+	Page       int
+	PageSize   int
+	Recency    Recency
+	Tags       []string
 	AuthorName string
-	Title    string
+	Title      string
 }
 
 // Repository Interfaces provide an abstraction layer for data access operations related to blogs, comments, and user reactions.

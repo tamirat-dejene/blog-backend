@@ -1,59 +1,90 @@
 package security
 
 import (
+	"errors"
+	"fmt"
 	domain "g6/blog-api/Domain"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var (
-	accessSecret  string
-	refreshSecret string
-	accessExp     time.Duration
-	refreshExp    time.Duration
-)
-
-func InitJWT(ats, rts string, atMinutes, rtHours int) {
-	accessSecret = ats
-	refreshSecret = rts
-	accessExp = time.Duration(atMinutes) * time.Minute
-	refreshExp = time.Duration(rtHours) * time.Hour
+type JwtService struct {
+	AccessSecret  string
+	RefreshSecret string
+	AccessExpiry  time.Duration
+	RefreshExpiry time.Duration
 }
 
-func GenerateTokenPair(userID, role string) (domain.TokenPair, error) {
+func NewJWTService(accessSecret, refreshSecret string, accessExpiry, refreshExpiry int) domain.IAuthService {
+	return &JwtService{
+		AccessSecret:  accessSecret,
+		RefreshSecret: refreshSecret,
+		AccessExpiry:  time.Duration(accessExpiry) * time.Minute,
+		RefreshExpiry: time.Duration(refreshExpiry) * time.Hour,
+	}
+}
+
+func (s *JwtService) GenerateTokens(user domain.User) (domain.RefreshTokenResponse, error) {
+	fmt.Println(s, user)
 	accessClaims := jwt.MapClaims{
-		"sub":  userID,
-		"role": role,
-		"exp":  time.Now().Add(accessExp).Unix(),
+		"sub":      user.ID,
+		"username": user.Username,
+		"role":     user.Role,
+		"exp":      time.Now().Add(s.AccessExpiry).Unix(),
 	}
-	refreshClaims := jwt.MapClaims{
-		"sub": userID,
-		"exp": time.Now().Add(refreshExp).Unix(),
-	}
-
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
+	accessTokenStr, err := accessToken.SignedString([]byte(s.AccessSecret))
+	if err != nil {
+		return domain.RefreshTokenResponse{}, err
+	}
+
+	refreshClaims := jwt.MapClaims{
+		"sub":      user.ID,
+		"username": user.Username,
+		"exp":      time.Now().Add(s.RefreshExpiry).Unix(),
+	}
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
-
-	signedAccessToken, err := accessToken.SignedString([]byte(accessSecret))
+	refreshTokenStr, err := refreshToken.SignedString([]byte(s.RefreshSecret))
 	if err != nil {
-		return domain.TokenPair{}, err
+		return domain.RefreshTokenResponse{}, err
 	}
 
-	signedRefreshToken, err := refreshToken.SignedString([]byte(refreshSecret))
-	if err != nil {
-		return domain.TokenPair{}, err
-	}
-
-	return domain.TokenPair{
-		AccessToken:  signedAccessToken,
-		RefreshToken: signedRefreshToken,
+	return domain.RefreshTokenResponse{
+		AccessToken:  accessTokenStr,
+		RefreshToken: refreshTokenStr,
+		ExpiresAt:    time.Now().Add(s.RefreshExpiry),
 	}, nil
 }
 
-func GetAccessSecret() string {
-	return accessSecret
+func (s *JwtService) ValidateToken(token string) (jwt.MapClaims, error) {
+	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (any, error) {
+		if method, ok := token.Method.(*jwt.SigningMethodHMAC); !ok || method.Alg() != jwt.SigningMethodHS256.Alg() {
+			return nil, errors.New("unexpected signing method")
+		}
+		return []byte(s.AccessSecret), nil
+	})
+	if err != nil {
+		return nil, errors.New("invalid token: " + err.Error())
+	}
+	if claims, ok := parsedToken.Claims.(jwt.MapClaims); ok && parsedToken.Valid {
+		return claims, nil
+	}
+	return nil, errors.New("invalid token")
 }
-func GetRefreshSecret() string {
-	return refreshSecret
+
+func (s *JwtService) ValidateRefreshToken(token string) (jwt.MapClaims, error) {
+	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (any, error) {
+		if method, ok := token.Method.(*jwt.SigningMethodHMAC); !ok || method.Alg() != jwt.SigningMethodHS256.Alg() {
+			return nil, errors.New("unexpected signing method")
+		}
+		return []byte(s.RefreshSecret), nil
+	})
+	if err != nil {
+		return nil, errors.New("invalid token: " + err.Error())
+	}
+	if claims, ok := parsedToken.Claims.(jwt.MapClaims); ok && parsedToken.Valid {
+		return claims, nil
+	}
+	return nil, errors.New("invalid token")
 }
