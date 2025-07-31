@@ -1,28 +1,39 @@
 package bootstrap
 
 import (
-	"g6/blog-api/Configs"
-	"g6/blog-api/Infrastructure/database"
-
-	"go.mongodb.org/mongo-driver/mongo"
+	"context"
+	"g6/blog-api/Infrastructure/database/mongo"
+	"log"
 )
 
 type Application struct {
-	Env   *Configs.Env
-	Mongo *mongo.Client
+	Env   *Env
+	Mongo mongo.Client
 }
 
-func App() Application {
-	env, err := Configs.NewEnv(".env")
-	if err != nil {
-		panic("Failed to load configuration: " + err.Error())
-	}
+func App(envPath string) Application {
 	app := &Application{}
+	env, err := NewEnv(envPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	mongo_client, err := mongo.NewClient(env.DB_Uri)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	app.Mongo = mongo_client
 	app.Env = env
-	app.Mongo = database.NewMongoDatabase(app.Env)
+
 	return *app
 }
 
 func (app *Application) CloseDBConnection() {
-	database.CloseMongoDBConnection(app.Mongo)
+	if app.Mongo != nil {
+		err := app.Mongo.Disconnect(context.TODO())
+		if err != nil {
+			log.Printf("Error disconnecting from MongoDB: %v", err)
+		}
+	}
 }

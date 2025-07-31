@@ -1,4 +1,4 @@
-package mongo
+package repository
 
 import (
 	"context"
@@ -31,14 +31,17 @@ func (b *blogRepo) Delete(ctx context.Context, id string) error {
 	panic("unimplemented")
 }
 
-// FindAll implements domain.BlogRepository.
-func (b *blogRepo) FindAll(ctx context.Context) ([]domain.Blog, error) {
-	panic("unimplemented")
-}
+// Get implements domain.BlogRepository.
+func (b *blogRepo) Get(ctx context.Context, filter *domain.BlogFilter) ([]domain.Blog, error) {
+	var blogs []domain.Blog
+	var err error
 
-// FindByTitle implements domain.BlogRepository.
-func (b *blogRepo) FindByTitle(ctx context.Context, title string) ([]domain.Blog, error) {
-	panic("unimplemented")
+	if filter != nil {
+		// Apply filtering logic here
+		// For example, you can use filter.Page, filter.PageSize, etc.
+	}
+
+	return blogs, err
 }
 
 // Update implements domain.BlogRepository.

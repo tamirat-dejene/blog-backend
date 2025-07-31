@@ -1,29 +1,30 @@
 package routers
 
 import (
-	configs "g6/blog-api/Configs"
+	"g6/blog-api/Delivery/bootstrap"
 	"g6/blog-api/Delivery/controllers"
 	repositories "g6/blog-api/Repositories"
 	usercase "g6/blog-api/Usecases"
+	"time"
 
 	"g6/blog-api/Infrastructure/security"
 
+	"g6/blog-api/Infrastructure/database/mongo"
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func NewAuthRoutes(env *configs.Env, api *gin.RouterGroup, db *mongo.Database) {
+func NewAuthRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Database) {
 	authService := security.NewJWTService(
-		env.AccTS,
-		env.RefTS,
-		env.AccTE,
-		env.RefTE,
+		env.ATS,
+		env.RTS,
+		env.AccTEMinutes,
+		env.RefTEHours,
 	)
 
 	authController := controllers.AuthController{
-		UserUsecase:         usercase.NewUserUsecase(repositories.NewUserRepository(db, "users")),
+		UserUsecase:         usercase.NewUserUsecase(repositories.NewUserRepository(db, env.UserCollection), time.Duration(env.CtxTSeconds)*time.Second),
 		AuthService:         authService,
-		RefreshTokenUsecase: usercase.NewRefreshTokenUsecase(repositories.NewRefreshTokenRepository(db, "refresh_tokens")),
+		RefreshTokenUsecase: usercase.NewRefreshTokenUsecase(repositories.NewRefreshTokenRepository(db, env.RefreshTokenCollection)),
 	}
 
 	api.POST("/register", authController.RegisterRequest)

@@ -5,11 +5,9 @@ import (
 	domain "g6/blog-api/Domain"
 	"g6/blog-api/Infrastructure/security"
 	"net/http"
-	"regexp"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthController struct {
@@ -28,32 +26,14 @@ func (ac *AuthController) RegisterRequest(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
-	existedUser, _ := ac.UserUsecase.GetUserByUsername(newUser.Username)
-	if existedUser != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Username already exists"})
-		return
-	}
-	existedUser, _ = ac.UserUsecase.GetUserByEmail(newUser.Email)
-	if existedUser != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Email already exists"})
-		return
-	}
 
-	hashPassword, err := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
+	user := dto.ToDomainUser(newUser)
+	err := ac.UserUsecase.Register(&user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	user := newUser.ToUserEntity()
-	user.Password = string(hashPassword)
-	user.CreatedAt = time.Now()
-	user.UpdatedAt = time.Now()
-	err = ac.UserUsecase.CreateUser(user)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register user"})
-		return
-	}
-	c.JSON(http.StatusCreated, dto.FromUserEntityToDTO(user))
+	c.JSON(http.StatusCreated, dto.ToUserResponse(user))
 }
 
 func (ac *AuthController) LoginRequest(c *gin.Context) {
@@ -66,24 +46,15 @@ func (ac *AuthController) LoginRequest(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Username/email and password are required"})
 		return
 	}
-	emailRegex := `^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`
-	isEmail, _ := regexp.MatchString(emailRegex, loginRequest.Identifier)
 
-	var user *domain.User
-	var err error
-
-	if isEmail {
-		user, err = ac.UserUsecase.GetUserByEmail(loginRequest.Identifier)
-	} else {
-		user, err = ac.UserUsecase.GetUserByUsername(loginRequest.Identifier)
-	}
+	user, err := ac.UserUsecase.FindByUsernameOrEmail(c.Request.Context(), loginRequest.Identifier)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
-	match := security.ValidatePassword(user.Password, loginRequest.Password)
-	if !match {
+	err = security.ValidatePassword(user.Password, loginRequest.Password)
+	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
 		return
 	}

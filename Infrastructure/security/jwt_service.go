@@ -6,7 +6,7 @@ import (
 	domain "g6/blog-api/Domain"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type JwtService struct {
@@ -20,7 +20,7 @@ func NewJWTService(accessSecret, refreshSecret string, accessExpiry, refreshExpi
 	return &JwtService{
 		AccessSecret:  accessSecret,
 		RefreshSecret: refreshSecret,
-		AccessExpiry:  time.Duration(accessExpiry) * time.Hour,
+		AccessExpiry:  time.Duration(accessExpiry) * time.Minute,
 		RefreshExpiry: time.Duration(refreshExpiry) * time.Hour,
 	}
 }

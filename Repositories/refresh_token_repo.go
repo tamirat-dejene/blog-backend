@@ -6,16 +6,16 @@ import (
 	domain "g6/blog-api/Domain"
 	"g6/blog-api/Infrastructure/database"
 
+	"g6/blog-api/Infrastructure/database/mongo"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type RefreshTokenRepository struct {
-	DB         *mongo.Database
+	DB         mongo.Database
 	Collection string
 }
 
-func NewRefreshTokenRepository(db *mongo.Database, collection string) domain.IRefreshTokenRepository {
+func NewRefreshTokenRepository(db mongo.Database, collection string) domain.IRefreshTokenRepository {
 	return &RefreshTokenRepository{
 		DB:         db,
 		Collection: collection,
@@ -34,7 +34,7 @@ func (repo *RefreshTokenRepository) FindByToken(ctx context.Context, token strin
 	var tokenDB database.RefreshTokenDB
 	err := repo.DB.Collection(repo.Collection).FindOne(ctx, bson.M{"token": token}).Decode(&tokenDB)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if err == mongo.ErrNoDocuments() {
 			return nil, fmt.Errorf("refresh token not found")
 		}
 		return nil, err

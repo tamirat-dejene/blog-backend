@@ -1,6 +1,8 @@
 package dto
 
 import (
+	domain "g6/blog-api/Domain"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
 )
 
@@ -29,4 +31,44 @@ type UserResponse struct {
 	AvatarURL string    `json:"avatar_url"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func ToDomainUser(req UserRequest) domain.User {
+	return domain.User{
+		ID:        primitive.NewObjectID(),
+		Username:  req.Username,
+		Email:     req.Email,
+		Password:  req.Password, // Ensure to hash the password before saving to the domain
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Role:      domain.UserRole(req.Role),
+		Bio:       req.Bio,
+		AvatarURL: req.AvatarURL,
+		CreatedAt: req.CreatedAt,
+		UpdatedAt: req.UpdatedAt,
+	}
+}
+
+func ToUserResponse(user domain.User) UserResponse {
+	return UserResponse{
+		ID:        user.ID.Hex(),
+		Username:  user.Username,
+		Email:     user.Email,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Role:      string(user.Role),
+		Bio:       user.Bio,
+		AvatarURL: user.AvatarURL,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+	}
+}
+
+// to response list
+func ToUserResponseList(users []*domain.User) []UserResponse {
+	var responses []UserResponse
+	for _, user := range users {
+		responses = append(responses, ToUserResponse(*user))
+	}
+	return responses
 }
