@@ -2,24 +2,25 @@ package repository
 
 import (
 	"context"
-	"errors"
 	domain "g6/blog-api/Domain"
 	"g6/blog-api/Infrastructure/database/mongo"
 	"g6/blog-api/Infrastructure/database/mongo/mapper"
+	"net/http"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type BlogUserReactionRepo struct {
-	db         mongo.Database
+	db          mongo.Database
 	collections *collections
 }
 
 func NewUserReactionRepo(database mongo.Database, collections *collections) domain.BlogUserReactionRepository {
 	return &BlogUserReactionRepo{
-		db:         database,
+		db:          database,
 		collections: collections,
 	}
 }
@@ -143,7 +144,7 @@ func (u *BlogUserReactionRepo) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (u *BlogUserReactionRepo) GetUserReaction(ctx context.Context, blogID, userID string) (domain.BlogUserReaction, error) {
+func (u *BlogUserReactionRepo) GetUserReaction(ctx context.Context, blogID string, userID string) (domain.BlogUserReaction, error) {
 
 	filter := bson.M{"blog_id": blogID, "user_id": userID}
 
@@ -152,10 +153,12 @@ func (u *BlogUserReactionRepo) GetUserReaction(ctx context.Context, blogID, user
 	err := u.db.Collection(u.collections.BlogUserReactions).FindOne(ctx, filter).Decode(&reaction)
 
 	if err != nil {
-		if err == mongo.ErrNoDocuments() {
-			return domain.BlogUserReaction{}, errors.New("no reaction found")
+		if err.Error() == "no reaction found" {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "Reaction not found"})
+		} else {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
-		return domain.BlogUserReaction{}, err
+		return
 	}
 
 	response := mapper.BlogUserReactionToDomain(&reaction)
