@@ -2,23 +2,26 @@ package middleware
 
 import (
 	"net/http"
-	"strings"
 
 	"g6/blog-api/Delivery/bootstrap"
 	domain "g6/blog-api/Domain"
+	utils "g6/blog-api/Utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// AuthMiddleware checks if the user is authenticated by verifying the JWT token
 func AuthMiddleware(env bootstrap.Env) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		header := c.GetHeader("Authorization")
-		if !strings.HasPrefix(header, "Bearer ") {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing token"})
+		tokenStr, err := utils.GetCookie(c, "access_token")
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "No access token found in cookies, please login again"})
+			c.Abort()
 			return
 		}
-		tokenStr := strings.TrimPrefix(header, "Bearer ")
+
+		// Parse and validate the JWT
 		token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
 			return []byte(env.ATS), nil
 		})
