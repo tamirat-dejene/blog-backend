@@ -66,7 +66,7 @@ func (b *BlogPostController) GetBlogPosts(ctx *gin.Context) {
 	})
 }
 
-func (b *BlogPostController) GetBlogByID(ctx *gin.Context) {
+func (b *BlogPostController) GetBlogPostByID(ctx *gin.Context) {
 	blog_id := ctx.Param("id")
 	if blog_id == "" {
 		ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
