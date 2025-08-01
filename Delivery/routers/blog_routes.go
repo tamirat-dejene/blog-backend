@@ -15,8 +15,8 @@ func NewBlogRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Database) 
 	blogGroup := api.Group("/blogs")
 
 	blog_controller := controllers.BlogController{
-		BlogUsecase: usecases.NewBlogUsecase(repository.NewBlogRepo(db, env.BlogCollection), time.Duration(env.CtxTSeconds)*time.Second),
-		Env: env,
+		BlogUsecase: usecases.NewBlogUsecase(repository.NewBlogRepo(db, repository.NewCollections(env.BlogPostCollection, env.BlogCommentCollection, env.BlogUserReactionCollection)), time.Duration(env.CtxTSeconds)*time.Second),
+		Env:         env,
 	}
 
 	blogGroup.GET("/", blog_controller.GetBlogs) // Get all blogs with optional filters

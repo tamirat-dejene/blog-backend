@@ -15,7 +15,7 @@ import (
 
 type blogRepo struct {
 	db         mongo.Database
-	collection string
+	collections *collections
 }
 
 // Create implements domain.BlogRepository.
@@ -24,7 +24,7 @@ func (b *blogRepo) Create(ctx context.Context, blog *domain.Blog) (*domain.Blog,
 	if err != nil {
 		return nil, err
 	}
-	insertedID, err := b.db.Collection(b.collection).InsertOne(ctx, blog_model)
+	insertedID, err := b.db.Collection(b.collections.BlogPosts).InsertOne(ctx, blog_model)
 	if err != nil {
 		return nil, err
 	}
@@ -39,13 +39,13 @@ func (b *blogRepo) Delete(ctx context.Context, id string) error {
 	if err != nil {
 		return err
 	}
-	_, err = b.db.Collection(b.collection).DeleteOne(ctx, bson.M{"_id": oid})
+	_, err = b.db.Collection(b.collections.BlogPosts).DeleteOne(ctx, bson.M{"_id": oid})
 	return err
 }
 
 // Get implements domain.BlogRepository.
 func (b *blogRepo) Get(ctx context.Context, filter *domain.BlogFilter) ([]domain.Blog, error) {
-	collection := b.db.Collection(b.collection)
+	collection := b.db.Collection(b.collections.BlogPosts)
 
 	query := utils.BuildBlogFilterQuery(filter)
 	var pipeline []bson.D
@@ -111,13 +111,13 @@ func (b *blogRepo) Update(ctx context.Context, id string, blog domain.Blog) (dom
 		},
 	}
 
-	_, err = b.db.Collection(b.collection).UpdateOne(ctx, oid, update)
+	_, err = b.db.Collection(b.collections.BlogPosts).UpdateOne(ctx, oid, update)
 	return domain.Blog{}, err
 }
 
-func NewBlogRepo(database mongo.Database, collection string) domain.BlogRepository {
+func NewBlogRepo(database mongo.Database, collections *collections) domain.BlogRepository {
 	return &blogRepo{
 		db:         database,
-		collection: collection,
+		collections: collections,
 	}
 }

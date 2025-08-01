@@ -22,7 +22,7 @@ type Env struct {
 	Page           int    `mapstructure:"PAGE"`
 	PageSize       int    `mapstructure:"PAGE_SIZE"`
 	Recency        string `mapstructure:"RECENCY"`
-	BlogCollection string `mapstructure:"BLOG_COLLECTION"`
+	BlogPostCollection string `mapstructure:"BLOG_POST_COLLECTION"`
 
 	// blog comment defaults
 	BlogCommentCollection string `mapstructure:"BLOG_COMMENT_COLLECTION"`
