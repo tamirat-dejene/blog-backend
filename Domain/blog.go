@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type Blog struct {
+type BlogPost struct {
 	ID              string
 	Title           string
 	Content         string
@@ -45,7 +45,7 @@ const (
 	RecencyOldest Recency = "oldest"
 )
 
-type BlogFilter struct {
+type BlogPostFilter struct {
 	Page       int
 	PageSize   int
 	Recency    Recency
@@ -56,17 +56,17 @@ type BlogFilter struct {
 }
 
 // Repository Interfaces provide an abstraction layer for data access operations related to blogs, comments, and user reactions.
-type BlogRepository interface {
-	Create(ctx context.Context, blog *Blog) (*Blog, error)
-	Update(ctx context.Context, id string, blog Blog) (Blog, error)
+type BlogPostRepository interface {
+	Create(ctx context.Context, blog *BlogPost) (*BlogPost, error)
+	Update(ctx context.Context, id string, blog BlogPost) (BlogPost, error)
 	Delete(ctx context.Context, id string) error
-	Get(ctx context.Context, filter *BlogFilter) ([]Blog, error)
+	Get(ctx context.Context, filter *BlogPostFilter) ([]BlogPost, error)
 
 	//... more methods can be added based on the usecases
 }
 
 type BlogCommentRepository interface {
-	Create(ctx context.Context, comment BlogComment) (Blog, error)
+	Create(ctx context.Context, comment BlogComment) (BlogComment, error)
 	Delete(ctx context.Context, id string) error
 }
 
@@ -77,15 +77,15 @@ type BlogUserReactionRepository interface {
 }
 
 // Usecase Interfaces define the business logic for handling blogs, comments, and user reactions.
-type BlogUsecase interface {
-	GetBlogs(ctx context.Context, filter *BlogFilter) ([]Blog, error)
-	CreateBlog(ctx context.Context, blog *Blog) (*Blog, error)
-	UpdateBlog(ctx context.Context, id string, blog Blog) (Blog, error)
+type BlogPostUsecase interface {
+	GetBlogs(ctx context.Context, filter *BlogPostFilter) ([]BlogPost, error)
+	CreateBlog(ctx context.Context, blog *BlogPost) (*BlogPost, error)
+	UpdateBlog(ctx context.Context, id string, blog BlogPost) (BlogPost, error)
 	DeleteBlog(ctx context.Context, id string) error
 }
 
 type BlogCommentUsecase interface {
-	CreateComment(ctx context.Context, comment BlogComment) (Blog, error)
+	CreateComment(ctx context.Context, comment BlogComment) (BlogComment, error)
 	DeleteComment(ctx context.Context, id string) error
 }
 

@@ -35,9 +35,9 @@ func PaginationOpts(page, page_size int, recency domain.Recency) *options.FindOp
 		SetSort(RecencySort(recency))
 }
 
-// BuildBlogFilterQuery constructs a MongoDB query based on the provided BlogFilter.
-// It filters blogs by tags, title, and author name.
-func BuildBlogFilterQuery(filter *domain.BlogFilter) bson.M {
+// BuildBlogPostFilterQuery constructs a MongoDB query based on the provided BlogPostFilter.
+// It filters blog posts by tags, title, and author name.
+func BuildBlogPostFilterQuery(filter *domain.BlogPostFilter) bson.M {
 	query := bson.M{}
 
 	if filter == nil {

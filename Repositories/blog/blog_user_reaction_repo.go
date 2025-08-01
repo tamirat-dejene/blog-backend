@@ -14,13 +14,13 @@ import (
 
 type BlogUserReactionRepo struct {
 	db         mongo.Database
-	collection string
+	collections *collections
 }
 
-func NewUserReactionRepo(database mongo.Database, collection string) domain.BlogUserReactionRepository {
+func NewUserReactionRepo(database mongo.Database, collections *collections) domain.BlogUserReactionRepository {
 	return &BlogUserReactionRepo{
 		db:         database,
-		collection: collection,
+		collections: collections,
 	}
 }
 
@@ -39,16 +39,16 @@ func (u *BlogUserReactionRepo) Create(ctx context.Context, reaction domain.BlogU
 	var existing mapper.BlogUserReactionModel
 
 	// Check for existing reaction
-	duplicateErr := u.db.Collection(u.collection).FindOne(ctx, filter).Decode(&existing)
+	duplicateErr := u.db.Collection(u.collections.BlogUserReactions).FindOne(ctx, filter).Decode(&existing)
 
-	blogCollection := u.db.Collection("posts")
+	blogCollection := u.db.Collection(u.collections.BlogPosts)
 	blogFilter := bson.M{"_id": blogReaction.BlogID}
 
 	if duplicateErr == mongo.ErrNoDocuments() {
 
 		// No existing record, insert new
 		reaction.CreatedAt = time.Now()
-		_, err = u.db.Collection(u.collection).InsertOne(ctx, blogReaction)
+		_, err = u.db.Collection(u.collections.BlogUserReactions).InsertOne(ctx, blogReaction)
 
 		if err != nil {
 			return domain.BlogUserReaction{}, nil
@@ -87,7 +87,7 @@ func (u *BlogUserReactionRepo) Create(ctx context.Context, reaction domain.BlogU
 		},
 	}
 
-	_, err = u.db.Collection(u.collection).UpdateOne(ctx, filter, update)
+	_, err = u.db.Collection(u.collections.BlogUserReactions).UpdateOne(ctx, filter, update)
 
 	if err != nil {
 		return domain.BlogUserReaction{}, err
@@ -120,11 +120,11 @@ func (u *BlogUserReactionRepo) Delete(ctx context.Context, id string) error {
 	}
 
 	var reaction mapper.BlogUserReactionModel
-	err = u.db.Collection(u.collection).FindOne(ctx, bson.M{"_id": oid}).Decode(&reaction)
+	err = u.db.Collection(u.collections.BlogUserReactions).FindOne(ctx, bson.M{"_id": oid}).Decode(&reaction)
 	if err != nil {
 		return err
 	}
-	_, err = u.db.Collection(u.collection).DeleteOne(ctx, bson.M{"_id": oid})
+	_, err = u.db.Collection(u.collections.BlogUserReactions).DeleteOne(ctx, bson.M{"_id": oid})
 	if err != nil {
 		return err
 	}
@@ -134,7 +134,7 @@ func (u *BlogUserReactionRepo) Delete(ctx context.Context, id string) error {
 	if !reaction.IsLike {
 		decField = "dislikes"
 	}
-	_, err = u.db.Collection("blogs").UpdateOne(ctx, bson.M{"_id": reaction.BlogID}, bson.M{
+	_, err = u.db.Collection(u.collections.BlogPosts).UpdateOne(ctx, bson.M{"_id": reaction.BlogID}, bson.M{
 		"$inc": bson.M{decField: -1},
 	})
 	if err != nil {
@@ -149,7 +149,7 @@ func (u *BlogUserReactionRepo) GetUserReaction(ctx context.Context, blogID, user
 
 	var reaction mapper.BlogUserReactionModel
 
-	err := u.db.Collection(u.collection).FindOne(ctx, filter).Decode(&reaction)
+	err := u.db.Collection(u.collections.BlogUserReactions).FindOne(ctx, filter).Decode(&reaction)
 
 	if err != nil {
 		if err == mongo.ErrNoDocuments() {

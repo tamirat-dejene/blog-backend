@@ -7,7 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type BlogModel struct {
+type BlogPostModel struct {
 	ID              primitive.ObjectID `bson:"_id,omitempty"`
 	Title           string             `bson:"title"`
 	Content         string             `bson:"content"`
@@ -40,14 +40,14 @@ type BlogUserReactionModel struct {
 }
 
 // Convert to domain
-func BlogToDomain(blog *BlogModel) *domain.Blog {
-	return &domain.Blog{
+func BlogToDomain(blog *BlogPostModel) *domain.BlogPost {
+	return &domain.BlogPost{
 		ID:        blog.ID.Hex(),
 		Title:     blog.Title,
 		Content:   blog.Content,
 		AuthorID:  blog.AuthorID.Hex(),
 		Tags:      blog.Tags,
-		CreatedAt: blog.CreatedAt,
+		CreatedAt: blog.CreatedAt,	
 		UpdatedAt: blog.UpdatedAt,
 		Likes:     blog.Likes,
 		Dislikes:  blog.Dislikes,
@@ -56,7 +56,7 @@ func BlogToDomain(blog *BlogModel) *domain.Blog {
 }
 
 // Convert from domain
-func BlogFromDomain(blog *domain.Blog) (*BlogModel, error) {
+func BlogFromDomain(blog *domain.BlogPost) (*BlogPostModel, error) {
 	authorID, err := primitive.ObjectIDFromHex(blog.AuthorID)
 	if err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func BlogFromDomain(blog *domain.Blog) (*BlogModel, error) {
 		objectID = primitive.NewObjectID()
 	}
 
-	return &BlogModel{
+	return &BlogPostModel{
 		ID:        objectID,
 		Title:     blog.Title,
 		Content:   blog.Content,

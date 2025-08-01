@@ -13,18 +13,18 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type blogRepo struct {
+type blogPostRepo struct {
 	db         mongo.Database
-	collection string
+	collections *collections
 }
 
 // Create implements domain.BlogRepository.
-func (b *blogRepo) Create(ctx context.Context, blog *domain.Blog) (*domain.Blog, error) {
+func (b *blogPostRepo) Create(ctx context.Context, blog *domain.BlogPost) (*domain.BlogPost, error) {
 	blog_model, err := mapper.BlogFromDomain(blog)
 	if err != nil {
 		return nil, err
 	}
-	insertedID, err := b.db.Collection(b.collection).InsertOne(ctx, blog_model)
+	insertedID, err := b.db.Collection(b.collections.BlogPosts).InsertOne(ctx, blog_model)
 	if err != nil {
 		return nil, err
 	}
@@ -33,21 +33,21 @@ func (b *blogRepo) Create(ctx context.Context, blog *domain.Blog) (*domain.Blog,
 }
 
 // Delete implements domain.BlogRepository.
-func (b *blogRepo) Delete(ctx context.Context, id string) error {
+func (b *blogPostRepo) Delete(ctx context.Context, id string) error {
 	oid, err := primitive.ObjectIDFromHex(id)
 
 	if err != nil {
 		return err
 	}
-	_, err = b.db.Collection(b.collection).DeleteOne(ctx, bson.M{"_id": oid})
+	_, err = b.db.Collection(b.collections.BlogPosts).DeleteOne(ctx, bson.M{"_id": oid})
 	return err
 }
 
 // Get implements domain.BlogRepository.
-func (b *blogRepo) Get(ctx context.Context, filter *domain.BlogFilter) ([]domain.Blog, error) {
-	collection := b.db.Collection(b.collection)
+func (b *blogPostRepo) Get(ctx context.Context, filter *domain.BlogPostFilter) ([]domain.BlogPost, error) {
+	collection := b.db.Collection(b.collections.BlogPosts)
 
-	query := utils.BuildBlogFilterQuery(filter)
+	query := utils.BuildBlogPostFilterQuery(filter)
 	var pipeline []bson.D
 
 	// Always start with a match stage
@@ -80,12 +80,12 @@ func (b *blogRepo) Get(ctx context.Context, filter *domain.BlogFilter) ([]domain
 	}
 	defer cursor.Close(ctx)
 
-	var results []mapper.BlogModel
+	var results []mapper.BlogPostModel
 	if err = cursor.All(ctx, &results); err != nil {
 		return nil, err
 	}
 
-	blogs := make([]domain.Blog, 0, len(results))
+	blogs := make([]domain.BlogPost, 0, len(results))
 	for _, bm := range results {
 		blogs = append(blogs, *mapper.BlogToDomain(&bm))
 	}
@@ -94,11 +94,11 @@ func (b *blogRepo) Get(ctx context.Context, filter *domain.BlogFilter) ([]domain
 }
 
 // Update implements domain.BlogRepository.
-func (b *blogRepo) Update(ctx context.Context, id string, blog domain.Blog) (domain.Blog, error) {
+func (b *blogPostRepo) Update(ctx context.Context, id string, blog domain.BlogPost) (domain.BlogPost, error) {
 	oid, err := primitive.ObjectIDFromHex(blog.ID)
 
 	if err != nil {
-		return domain.Blog{}, err
+		return domain.BlogPost{}, err
 	}
 	blog.UpdatedAt = time.Now()
 
@@ -111,13 +111,13 @@ func (b *blogRepo) Update(ctx context.Context, id string, blog domain.Blog) (dom
 		},
 	}
 
-	_, err = b.db.Collection(b.collection).UpdateOne(ctx, oid, update)
-	return domain.Blog{}, err
+	_, err = b.db.Collection(b.collections.BlogPosts).UpdateOne(ctx, oid, update)
+	return domain.BlogPost{}, err
 }
 
-func NewBlogRepo(database mongo.Database, collection string) domain.BlogRepository {
-	return &blogRepo{
+func NewBlogPostRepo(database mongo.Database, collections *collections) domain.BlogPostRepository {
+	return &blogPostRepo{
 		db:         database,
-		collection: collection,
+		collections: collections,
 	}
 }

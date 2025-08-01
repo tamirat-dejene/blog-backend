@@ -11,11 +11,11 @@ import (
 )
 
 type BlogController struct {
-	BlogUsecase domain.BlogUsecase
+	BlogUsecase domain.BlogPostUsecase
 	Env         *bootstrap.Env
 }
 
-func (b *BlogController) parseBlogFilter(ctx *gin.Context) *domain.BlogFilter {
+func (b *BlogController) parseBlogFilter(ctx *gin.Context) *domain.BlogPostFilter {
 	page := ctx.DefaultQuery("page", fmt.Sprint(b.Env.Page))
 	page_size := ctx.DefaultQuery("pageSize", fmt.Sprint(b.Env.PageSize))
 	recency := ctx.DefaultQuery("recency", b.Env.Recency)
@@ -37,7 +37,7 @@ func (b *BlogController) parseBlogFilter(ctx *gin.Context) *domain.BlogFilter {
 	pageInt, _ := strconv.Atoi(page)
 	pageSizeInt, _ := strconv.Atoi(page_size)
 
-	return &domain.BlogFilter{
+	return &domain.BlogPostFilter{
 		Page:       pageInt,
 		PageSize:   pageSizeInt,
 		Recency:    domain.Recency(recency),
