@@ -52,14 +52,45 @@ func (uc *UserUsecase) ChangeRole(initiatorRole string, targetUserID string, req
 	ctx, cancel := context.WithTimeout(context.Background(), uc.ctxtimeout)
 	defer cancel()
 
-	if domain.UserRole(initiatorRole) == domain.RoleAdmin && domain.UserRole(request.Role) == domain.RoleAdmin {
-		return errors.New("only superadmin can promote/ demote admin")
+	initRole := domain.UserRole(initiatorRole)
+	newRole := request.Role
+
+	// only super admin or admin can change roles
+	if initRole != domain.RoleSuperAdmin && initRole != domain.RoleAdmin {
+		return errors.New("unauthorized: only superadmin or admin can change roles")
 	}
-	// Only superadmin and admin can change roles
-	if domain.UserRole(initiatorRole) != domain.RoleSuperAdmin && domain.UserRole(initiatorRole) != domain.RoleAdmin {
-		return errors.New("insufficient privileges")
+
+	target, err := uc.userRepo.FindUserByID(ctx, targetUserID)
+	if err != nil {
+		return errors.New("target user not found")
 	}
-	return uc.userRepo.ChangeRole(ctx, targetUserID, string(domain.UserRole(request.Role)), request.Username)
+
+	//only super admin can change to super admin
+	if newRole == domain.RoleSuperAdmin && initRole != domain.RoleSuperAdmin {
+		return errors.New("unauthorized: only superadmin can assign superadmin role")
+	}
+	if newRole == target.Role {
+		return errors.New("no change in role")
+	}
+
+	if target.Role == domain.RoleSuperAdmin && initRole != domain.RoleSuperAdmin {
+		return errors.New("only superadmin can modify superadmin role")
+	}
+	if initRole == domain.RoleAdmin {
+		switch target.Role {
+		case domain.RoleAdmin:
+			return errors.New("unauthorized: admin cannot modify other admins")
+		case domain.RoleSuperAdmin:
+			return errors.New("unauthorized: admin cannot modify superadmin")
+		case domain.RoleUser:
+			if newRole != domain.RoleAdmin {
+				return errors.New("unauthorized: admin can only promote users to admin")
+			}
+		}
+	}
+
+	// Proceed with changing the role
+	return uc.userRepo.ChangeRole(ctx, targetUserID, string(newRole), target.Username)
 }
 
 // find user by username or id
