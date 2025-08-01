@@ -22,13 +22,34 @@ func (b *blogCommentUsecase) DeleteComment(ctx context.Context, id string) error
 }
 
 // GetCommentByID implements domain.BlogCommentUsecase.
-func (b *blogCommentUsecase) GetCommentByID(ctx context.Context, id string) (*domain.BlogComment, error) {
-	panic("unimplemented")
+func (b *blogCommentUsecase) GetCommentByID(ctx context.Context, id string) (*domain.BlogComment, *domain.DomainError) {
+	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
+	defer cancel()
+
+	comment, err := b.commentRepo.GetCommentByID(c, id)
+	if err != nil {
+		return nil, &domain.DomainError{
+			Err:  err.Err,
+			Code: err.Code,
+		}
+	}
+
+	return comment, nil
 }
 
 // GetCommentsByBlogID implements domain.BlogCommentUsecase.
-func (b *blogCommentUsecase) GetCommentsByBlogID(ctx context.Context, blogID string) ([]domain.BlogComment, error) {
-	panic("unimplemented")
+func (b *blogCommentUsecase) GetCommentsByBlogID(ctx context.Context, blogID string, limit int) ([]domain.BlogComment, *domain.DomainError) {
+	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
+	defer cancel()
+
+	comments, err := b.commentRepo.GetCommentsByBlogID(c, blogID, limit)
+	if err != nil {
+		return nil, &domain.DomainError{
+			Err:  err.Err,
+			Code: err.Code,
+		}
+	}
+	return comments, nil
 }
 
 // UpdateComment implements domain.BlogCommentUsecase.

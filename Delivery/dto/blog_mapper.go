@@ -24,3 +24,7 @@ type BlogPostResponse struct {
 	CommentCount    int       `json:"comment_count"`    // for easy access to comment count
 	PopularityScore int       `json:"popularity_score"` // computed popularity score
 }
+
+type BlogIDParams struct {
+	BlogID string `uri:"blogID" binding:"required"`
+}

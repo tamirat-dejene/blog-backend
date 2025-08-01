@@ -39,6 +39,10 @@ type BlogUserReactionModel struct {
 	CreatedAt time.Time          `bson:"created_at"`
 }
 
+type ObjectIDModel struct {
+	ID primitive.ObjectID `bson:"_id,omitempty"`
+}
+
 // Convert to domain
 func BlogToDomain(blog *BlogPostModel) *domain.BlogPost {
 	return &domain.BlogPost{
