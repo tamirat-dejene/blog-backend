@@ -123,7 +123,11 @@ func (repo *UserRepository) InvalidateTokens(ctx context.Context, userID string)
 }
 
 func (repo *UserRepository) ChangeRole(ctx context.Context, targetUserID string, role string, username string) error {
-	_, err := repo.DB.Collection(repo.Collection).UpdateOne(ctx, bson.M{"_id": targetUserID}, bson.M{
+	objID, err := primitive.ObjectIDFromHex(targetUserID)
+	if err != nil {
+		return fmt.Errorf("invalid user ID: %v", err)
+	}
+	_, err = repo.DB.Collection(repo.Collection).UpdateOne(ctx, bson.M{"_id": objID}, bson.M{
 		"$set": bson.M{
 			"role":       role,
 			"updated_at": time.Now(),
