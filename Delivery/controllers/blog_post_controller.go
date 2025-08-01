@@ -10,12 +10,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type BlogController struct {
-	BlogUsecase domain.BlogPostUsecase
-	Env         *bootstrap.Env
+type BlogPostController struct {
+	BlogPostUsecase domain.BlogPostUsecase
+	Env             *bootstrap.Env
 }
 
-func (b *BlogController) parseBlogFilter(ctx *gin.Context) *domain.BlogPostFilter {
+func (b *BlogPostController) parseBlogPostFilter(ctx *gin.Context) *domain.BlogPostFilter {
 	page := ctx.DefaultQuery("page", fmt.Sprint(b.Env.Page))
 	page_size := ctx.DefaultQuery("pageSize", fmt.Sprint(b.Env.PageSize))
 	recency := ctx.DefaultQuery("recency", b.Env.Recency)
@@ -48,9 +48,9 @@ func (b *BlogController) parseBlogFilter(ctx *gin.Context) *domain.BlogPostFilte
 	}
 }
 
-func (b *BlogController) GetBlogs(ctx *gin.Context) {
-	filter := b.parseBlogFilter(ctx)
-	blogs, err := b.BlogUsecase.GetBlogs(ctx, filter)
+func (b *BlogPostController) GetBlogPosts(ctx *gin.Context) {
+	filter := b.parseBlogPostFilter(ctx)
+	paginated_blogs, err := b.BlogPostUsecase.GetBlogs(ctx, filter)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, domain.ErrorResponse{
 			Message: "Failed to retrieve blogs",
@@ -59,8 +59,9 @@ func (b *BlogController) GetBlogs(ctx *gin.Context) {
 		})
 		return
 	}
+
 	ctx.JSON(http.StatusOK, domain.SuccessResponse{
 		Message: "Successfully retrieved blogs",
-		Data:    blogs,
+		Data:    gin.H{"TotalPages": len(paginated_blogs), "Pages": paginated_blogs},
 	})
 }

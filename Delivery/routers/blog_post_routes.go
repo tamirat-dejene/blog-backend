@@ -14,12 +14,12 @@ import (
 func NewBlogRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Database) {
 	blogGroup := api.Group("/blogs")
 
-	blog_controller := controllers.BlogController{
-		BlogUsecase: usecases.NewBlogPostUsecase(repository.NewBlogPostRepo(db, repository.NewCollections(env.BlogPostCollection, env.BlogCommentCollection, env.BlogUserReactionCollection)), time.Duration(env.CtxTSeconds)*time.Second),
-		Env:         env,
+	blog_post_controller := controllers.BlogPostController{
+		BlogPostUsecase: usecases.NewBlogPostUsecase(repository.NewBlogPostRepo(db, repository.NewCollections(env.BlogPostCollection, env.BlogCommentCollection, env.BlogUserReactionCollection)), time.Duration(env.CtxTSeconds)*time.Second),
+		Env:             env,
 	}
 
-	blogGroup.GET("/", blog_controller.GetBlogs) // Get all blogs with optional filters
+	blogGroup.GET("/", blog_post_controller.GetBlogPosts) // Get all blogs with optional filters
 	// blogGroup.GET("/:id", blog_controller.GetBlogByID) // Get a single blog by ID
 	// blogGroup.POST("/", blog_controller.CreateBlog) // Create a new blog
 	// blogGroup.PUT("/:id", blog_controller.UpdateBlog) // Update an existing blog
