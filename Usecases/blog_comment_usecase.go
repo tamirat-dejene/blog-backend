@@ -11,14 +11,18 @@ type blogCommentUsecase struct {
 	ctxtimeout  time.Duration
 }
 
-// CreateComment implements domain.BlogCommentUsecase.
 func (b *blogCommentUsecase) CreateComment(ctx context.Context, comment domain.BlogComment) (*domain.BlogComment, error) {
-	panic("unimplemented")
+	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
+	defer cancel()
+
+	return b.commentRepo.Create(c, comment)
 }
 
-// DeleteComment implements domain.BlogCommentUsecase.
 func (b *blogCommentUsecase) DeleteComment(ctx context.Context, id string) error {
-	panic("unimplemented")
+	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
+	defer cancel()
+
+	return b.commentRepo.Delete(c, id)
 }
 
 // GetCommentByID implements domain.BlogCommentUsecase.

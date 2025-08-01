@@ -1,6 +1,9 @@
 package dto
 
-import "time"
+import (
+	domain "g6/blog-api/Domain"
+	"time"
+)
 
 type BlogPostRequest struct {
 	Title    string   `json:"title" binding:"required"`
@@ -23,4 +26,70 @@ type BlogPostResponse struct {
 	ViewCount       int       `json:"view_count"`
 	CommentCount    int       `json:"comment_count"`    // for easy access to comment count
 	PopularityScore int       `json:"popularity_score"` // computed popularity score
+}
+
+type BlogUserReactionRequest struct {
+	UserID string `json:"user_id" binding:"required"`
+	BlogID string `json:"blog_id" binding:"required"`
+	IsLike bool   `json:"is_like"`
+}
+
+type BlogUserReactionResponse struct {
+	ID        string    `json:"id"`
+	BlogID    string    `json:"blog_id"`
+	UserID    string    `json:"user_id"`
+	IsLike    bool      `json:"is_like"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func ToDomainBlogPost(req BlogPostRequest) domain.BlogPost {
+	return domain.BlogPost{
+		Title:           req.Title,
+		Content:         req.Content,
+		AuthorID:        req.AuthorID,
+		Tags:            req.Tags,
+		CreatedAt:       time.Now(),
+		UpdatedAt:       time.Now(),
+		Likes:           0,
+		Dislikes:        0,
+		ViewCount:       0,
+		CommentCount:    0,
+		PopularityScore: 0,
+	}
+}
+func FromDomainBlogPost(post *domain.BlogPost) BlogPostResponse {
+	return BlogPostResponse{
+		ID:              post.ID,
+		Title:           post.Title,
+		Content:         post.Content,
+		AuthorID:        post.AuthorID,
+		AuthorName:      post.AuthorName,
+		Tags:            post.Tags,
+		CreatedAt:       post.CreatedAt,
+		UpdatedAt:       post.UpdatedAt,
+		Likes:           post.Likes,
+		Dislikes:        post.Dislikes,
+		ViewCount:       post.ViewCount,
+		CommentCount:    post.CommentCount,
+		PopularityScore: post.PopularityScore,
+	}
+}
+
+func ToDomainBlogReaction(req BlogUserReactionRequest) domain.BlogUserReaction {
+	return domain.BlogUserReaction{
+		UserID:    req.UserID,
+		BlogID:    req.BlogID,
+		CreatedAt: time.Now(),
+		IsLike:    req.IsLike,
+	}
+}
+
+func FromDomainBlogReaction(response domain.BlogUserReaction) BlogUserReactionResponse {
+	return BlogUserReactionResponse{
+		ID:        response.ID,
+		BlogID:    response.BlogID,
+		UserID:    response.UserID,
+		CreatedAt: response.CreatedAt,
+		IsLike:    response.IsLike,
+	}
 }
