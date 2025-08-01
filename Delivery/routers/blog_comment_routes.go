@@ -2,23 +2,26 @@ package routers
 
 import (
 	"g6/blog-api/Delivery/bootstrap"
+	"g6/blog-api/Delivery/controllers"
 	"g6/blog-api/Infrastructure/database/mongo"
+	repository "g6/blog-api/Repositories/blog"
 
 	"github.com/gin-gonic/gin"
 )
 
 func NewBlogCommentRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Database) {
-	// blogCommentGroup := api.Group("/blog/comments")
+	comments := api.Group("/blog/:blogID/comments")
 
-	// // Initialize the blog comment repository, usecase, and controller
-	// blogCommentRepo := repository.NewBlogCommentRepo(db, env.BlogCommentCollection)
-	// blogCommentUsecase := usecases.NewBlogCommentUsecase(blogCommentRepo, time.Duration(env.CtxTSeconds)*time.Second)
-	// blogCommentController := controllers.BlogCommentController{
-	// 	BlogCommentUsecase: blogCommentUsecase,
-	// 	Env:                env,
-	// }
+	comment_controller := controllers.BlogCommentController{
+		CommentRepo: repository.NewBlogCommentRepository(db, repository.NewCollections(env.BlogCommentCollection, env.BlogPostCollection, env.BlogUserReactionCollection)),
+		Env:         env,
+	}
 
-	// // Define routes for blog comments
-	// blogCommentGroup.GET("/", blogCommentController.GetBlogComments) // Get all comments for a blog
-	// // Add more blog comment-related routes here as needed
+	{
+		comments.POST("/", comment_controller.CreateComment)
+		comments.DELETE("/:id", comment_controller.DeleteComment)
+		comments.GET("/:id", comment_controller.GetCommentByID)
+		comments.GET("/blog/:blogID", comment_controller.GetCommentsByBlogID)
+		comments.PUT("/:id", comment_controller.UpdateComment)
+	}
 }
