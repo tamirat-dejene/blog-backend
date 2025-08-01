@@ -63,6 +63,24 @@ func (b *blogPostRepo) Get(ctx context.Context, filter *domain.BlogPostFilter) (
 	return utils.PaginateBlogs(dbResults, filter.PageSize), nil
 }
 
+// GetBlogByID implements domain.BlogRepository.
+func (b *blogPostRepo) GetBlogByID(ctx context.Context, id string)(*domain.BlogPost, error) {
+	oid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid blog ID: %w", err)
+	}
+
+	var blogModel mapper.BlogPostModel
+	err = b.db.Collection(b.collections.BlogPosts).FindOne(ctx, bson.M{"_id": oid}).Decode(&blogModel)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find blog by ID: %w", err)
+	}
+
+	blog := mapper.BlogToDomain(&blogModel)
+	
+	return blog, nil
+}
+
 // Update implements domain.BlogRepository.
 func (b *blogPostRepo) Update(ctx context.Context, id string, blog domain.BlogPost) (domain.BlogPost, error) {
 	oid, err := primitive.ObjectIDFromHex(blog.ID)

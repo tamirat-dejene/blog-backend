@@ -34,6 +34,14 @@ func (b *blogPostUsecase) GetBlogs(ctx context.Context, filter *domain.BlogPostF
 	return b.blogPostRepo.Get(c, filter)
 }
 
+// GetBlogByID implements domain.BlogUsecase.
+func (b *blogPostUsecase) GetBlogByID(ctx context.Context, id string) (*domain.BlogPost, error) {
+	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
+	defer cancel()
+
+	return b.blogPostRepo.GetBlogByID(c, id)
+}
+
 // UpdateBlog implements domain.BlogUsecase.
 func (b *blogPostUsecase) UpdateBlog(ctx context.Context, id string, blog domain.BlogPost) (domain.BlogPost, error) {
 	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
