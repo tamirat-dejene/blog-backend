@@ -17,8 +17,8 @@ func NewBlogCommentRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Dat
 			repository.NewBlogCommentRepository(
 				db,
 				repository.NewCollections(
-					env.BlogCommentCollection,
 					env.BlogPostCollection,
+					env.BlogCommentCollection,
 					env.BlogUserReactionCollection,
 				),
 			),

@@ -69,8 +69,18 @@ func (b *blogCommentRepository) GetCommentByID(ctx context.Context, id string) (
 
 // GetCommentsByBlogID implements domain.BlogCommentRepository.
 func (b *blogCommentRepository) GetCommentsByBlogID(ctx context.Context, blogID string, limit int) ([]domain.BlogComment, *domain.DomainError) {
+	fmt.Println("Fetching comments for blog ID:", blogID, b.collections.BlogPosts)
 	// 1. Validate if the blog exists
-	_, err := NewBlogPostRepo(b.db, b.collections).GetBlogByID(ctx, blogID)
+	oid, err := primitive.ObjectIDFromHex(blogID)
+	if err != nil {
+		return nil, &domain.DomainError{
+			Err:  fmt.Errorf("invalid blog ID: %w", err),
+			Code: 400,
+		}
+	}
+	
+	var blogModel mapper.BlogPostModel
+	err = b.db.Collection(b.collections.BlogPosts).FindOne(ctx, bson.M{"_id": oid}).Decode(&blogModel)
 	if err != nil {
 		return nil, &domain.DomainError{
 			Err:  fmt.Errorf("blog not found: %w", err),

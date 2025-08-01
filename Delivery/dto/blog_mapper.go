@@ -28,10 +28,6 @@ type BlogPostResponse struct {
 	PopularityScore int       `json:"popularity_score"` // computed popularity score
 }
 
-type BlogIDParams struct {
-	BlogID string `uri:"id" binding:"required"`
-}
-
 type BlogUserReactionRequest struct {
 	UserID string `json:"user_id" binding:"required"`
 	BlogID string `json:"blog_id" binding:"required"`
