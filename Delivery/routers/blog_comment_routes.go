@@ -23,7 +23,7 @@ func NewBlogCommentRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Dat
 	}
 
 	// Routes for managing comments on a specific blog
-	blogComments := api.Group("/blogs/:blogID/comments")
+	blogComments := api.Group("/blogs/:id/comments")
 	{
 		blogComments.POST("/", comment_controller.CreateComment)      // Create a comment for a blog
 		blogComments.GET("/", comment_controller.GetCommentsByBlogID) // Get all comments for a blog
