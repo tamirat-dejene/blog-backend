@@ -25,7 +25,7 @@ func NewUserRepository(db mongo.Database, collection string) domain.IUserReposit
 }
 
 func (repo *UserRepository) CreateUser(ctx context.Context, user *domain.User) error {
-	user.ID = primitive.NewObjectID()
+	// user.ID = primitive.NewObjectID()
 	usermodel := mapper.UserFromDomain(user)
 	_, err := repo.DB.Collection(repo.Collection).InsertOne(ctx, usermodel)
 	if err != nil {
@@ -55,6 +55,13 @@ func (repo *UserRepository) GetAllUsers(ctx context.Context) ([]*domain.User, er
 	}
 
 	return mapper.UserToDomainList(users), nil
+}
+
+func (repo *UserRepository) UpdateUser(ctx context.Context, id string, user *domain.User) error {
+	userModel := mapper.UserFromDomain(user)
+	userModel.ID, _ = primitive.ObjectIDFromHex(id)
+	_, err := repo.DB.Collection(repo.Collection).UpdateOne(ctx, bson.M{"_id": userModel.ID}, bson.M{"$set": userModel})
+	return err
 }
 
 func (repo *UserRepository) FindUserByID(ctx context.Context, id string) (*domain.User, error) {

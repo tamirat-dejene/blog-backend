@@ -87,3 +87,14 @@ func (uc *userUsecase) GetUserByEmail(email string) (*domain.User, error) {
 	defer cancel()
 	return uc.userRepo.GetUserByEmail(ctx, email)
 }
+
+func (uc *userUsecase) UpdateUser(id string, user *domain.User) (*domain.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), uc.ctxtimeout)
+	defer cancel()
+
+	user.UpdatedAt = time.Now()
+	if err := uc.userRepo.UpdateUser(ctx, id, user); err != nil {
+		return nil, err
+	}
+	return user, nil
+}

@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 	domain "g6/blog-api/Domain"
 	"g6/blog-api/Infrastructure/database/mongo"
 	"g6/blog-api/Infrastructure/database/mongo/mapper"
@@ -23,7 +24,11 @@ func NewPasswordResetRepository(db mongo.Database, col string) domain.IPasswordR
 
 func (r *PasswordResetRepository) SaveResetToken(ctx context.Context, token *domain.PasswordResetToken) error {
 	tokenModel := mapper.PasswordResetTokenFromDomain(token)
-	_, err := r.DB.Collection(r.Collection).InsertOne(ctx, tokenModel)
+	collection := r.DB.Collection(r.Collection)
+	if collection == nil {
+		return fmt.Errorf("database collection is not initialized")
+	}
+	_, err := collection.InsertOne(ctx, tokenModel)
 	if err != nil {
 		return err
 	}
@@ -31,7 +36,7 @@ func (r *PasswordResetRepository) SaveResetToken(ctx context.Context, token *dom
 }
 
 func (r *PasswordResetRepository) FindByEmail(ctx context.Context, email string) (*domain.PasswordResetToken, error) {
-	var tokenModel mapper.PasswordResetToken
+	var tokenModel mapper.PasswordResetTokenDB
 	err := r.DB.Collection(r.Collection).FindOne(ctx, bson.M{"email": email}).Decode(&tokenModel)
 	if err != nil {
 		return nil, err
@@ -46,8 +51,28 @@ func (r *PasswordResetRepository) MarkAsUsed(ctx context.Context, token *domain.
 	}
 	return nil
 }
-func (r *PasswordResetRepository) DeleteByEmail(ctx context.Context, email string) error {
+func (r *PasswordResetRepository) DeleteResetToken(ctx context.Context, email string) error {
 	_, err := r.DB.Collection(r.Collection).DeleteOne(ctx, bson.M{"email": email})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// update reste token
+func (r *PasswordResetRepository) UpdateResetToken(ctx context.Context, token *domain.PasswordResetToken) error {
+	tokenModel := mapper.PasswordResetTokenFromDomain(token)
+	_, err := r.DB.Collection(r.Collection).UpdateOne(
+		ctx,
+		bson.M{"email": token.Email},
+		bson.M{"$set": bson.M{
+			"token_hash": tokenModel.TokenHash,
+			"expires_at": tokenModel.ExpiresAt,
+			"used":       tokenModel.Used,
+			"rate_limit": tokenModel.RateLimit,
+			"created_at": tokenModel.CreatedAt,
+		}},
+	)
 	if err != nil {
 		return err
 	}

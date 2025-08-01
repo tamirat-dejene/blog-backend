@@ -1,15 +1,12 @@
 package controllers
 
 import (
-	"fmt"
 	dto "g6/blog-api/Delivery/dto"
 	domain "g6/blog-api/Domain"
 	"g6/blog-api/Infrastructure/security"
 	utils "g6/blog-api/Utils"
 	"net/http"
 	"time"
-
-	"github.com/google/uuid"
 
 	"github.com/gin-gonic/gin"
 )
@@ -75,14 +72,14 @@ func (ac *AuthController) LoginRequest(c *gin.Context) {
 	// Save the refresh token in the database
 	refreshToken := &domain.RefreshToken{
 		Token:     response.RefreshToken,
-		UserID:    user.ID.Hex(),
+		UserID:    user.ID,
 		Revoked:   false,
 		ExpiresAt: response.ExpiresAt,
 		CreatedAt: time.Now(),
 	}
 
 	// Check if the user have token on db
-	existingToken, _ := ac.RefreshTokenUsecase.FindByUserID(user.ID.Hex())
+	existingToken, _ := ac.RefreshTokenUsecase.FindByUserID(user.ID)
 	if existingToken != nil {
 		// refresh token shouldn't used twice so we have to make revoke true
 		err := ac.RefreshTokenUsecase.RevokedToken(existingToken)
@@ -185,7 +182,7 @@ func (ac *AuthController) RefreshToken(c *gin.Context) {
 	// Save the refresh token in the database
 	refreshToken := &domain.RefreshToken{
 		Token:     response.RefreshToken,
-		UserID:    user.ID.Hex(),
+		UserID:    user.ID,
 		Revoked:   false,
 		ExpiresAt: response.ExpiresAt,
 		CreatedAt: time.Now(),
@@ -246,8 +243,6 @@ func (ac *AuthController) LogoutRequest(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to revoke token"})
 		return
 	}
-	fmt.Println("Revoked token for user:", tokenDoc.Revoked, tokenDoc.UserID)
-
 	// delete the token from the database
 	if err := ac.RefreshTokenUsecase.DeleteByUserID(tokenDoc.UserID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete token"})
@@ -271,26 +266,33 @@ func (ac *AuthController) ForgotPasswordRequest(c *gin.Context) {
 		return
 	}
 
-	_, err := ac.UserUsecase.GetUserByEmail(req.Email)
+	err := ac.PasswordResetUsecase.RequestReset(req.Email)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"message": "If the email exists, a reset link was sent"})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to process request", "error": err.Error()})
 		return
 	}
 
-	plainToken, err := ac.UserUsecase.SaveResetToken(req.Email)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save token"})
+	c.JSON(http.StatusOK, gin.H{"message": "Password reset link sent to email"})
+}
+
+// Reset password here
+func (ac *AuthController) ResetPasswordRequest(c *gin.Context) {
+	var req dto.ResetPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
 
-	// 👇 Construct reset URL
-	resetURL := fmt.Sprintf("https://yourapp.com/reset-password?token=%s&email=%s", plainToken, req.Email)
+	if err := validate.Struct(req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
-	// Send email with reset link
-	go func(email, url string) {
-		// Define a simple email sending logic or integrate with an email service
-		fmt.Printf("Sending reset email to %s with URL: %s\n", email, url)
-	}(req.Email, resetURL)
+	err := ac.PasswordResetUsecase.ResetPassword(req.Email, req.Token, req.NewPassword)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to reset password", "error": err.Error()})
+		return
+	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "If the email exists, a reset link was sent."})
+	c.JSON(http.StatusOK, gin.H{"message": "Password reset successfully"})
 }

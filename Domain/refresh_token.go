@@ -14,6 +14,7 @@ type PasswordResetToken struct {
 	RateLimit int
 	ExpiresAt time.Time
 	Used      bool
+	CreatedAt time.Time
 }
 
 type RefreshToken struct {
@@ -52,16 +53,4 @@ type IRefreshTokenRepository interface {
 	ReplaceTokenByUserID(ctx context.Context, token *RefreshToken) error
 	RevokeToken(ctx context.Context, token string) error
 	FindTokenByUserID(ctx context.Context, token string) (*RefreshToken, error)
-}
-
-type IPasswordResetUsecase interface {
-	SaveResetToken(email string) error
-	FindByEmail(email string) (*PasswordResetToken, error)
-	MarkAsUsed(token *PasswordResetToken) error
-}
-
-type IPasswordResetRepository interface {
-	SaveResetToken(ctx context.Context, token *PasswordResetToken) error
-	FindByEmail(ctx context.Context, email string) (*PasswordResetToken, error)
-	MarkAsUsed(ctx context.Context, token *PasswordResetToken) error
 }

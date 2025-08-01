@@ -4,13 +4,14 @@ import (
 	"context"
 	"g6/blog-api/Delivery/bootstrap"
 	"g6/blog-api/Delivery/routers"
-	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 // main.go - Entry point for the blog backend server. Handles server startup and graceful shutdown.

@@ -36,9 +36,17 @@ type Env struct {
 	RefreshTokenCollection string `mapstructure:"REFRESH_TOKEN_COLLECTION"`
 
 	// password reset token collection
-	PasswordResetCollection string `mapstructure:"PASSWORD_RESET_COLLECTION"`
+	PasswordResetCollection string `mapstructure:"PASSWORD_RESET_TOKEN_COLLECTION"`
 	// password reset token expiry
-	PasswordResetExpiry int `mapstructure:"PASSWORD_RESET_EXPIRY"` // in minutes
+	PasswordResetExpiry int `mapstructure:"PASSWORD_RESET_TOKEN_EXPIRE_MINUTES"` // in minutes
+
+	// email configuration
+	SMTPHost     string `mapstructure:"SMTP_HOST"`
+	SMTPPort     int    `mapstructure:"SMTP_PORT"`
+	SMTPFrom     string `mapstructure:"SMTP_FROM"`
+	SMTPUsername string `mapstructure:"SMTP_USERNAME"`
+	SMTPPassword string `mapstructure:"SMTP_PASSWORD"` // App Password for Gmail
+	ResetURL     string `mapstructure:"RESET_URL"`
 }
 
 // Viper can be made injectable
