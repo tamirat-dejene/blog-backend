@@ -65,3 +65,29 @@ func (b *BlogPostController) GetBlogPosts(ctx *gin.Context) {
 		Data:    gin.H{"TotalPages": len(paginated_blogs), "Pages": paginated_blogs},
 	})
 }
+
+func (b *BlogPostController) GetBlogByID(ctx *gin.Context) {
+	blog_id := ctx.Param("id")
+	if blog_id == "" {
+		ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: "Blog ID is required",
+			Code:    http.StatusBadRequest,
+		})
+		return
+	}
+
+	blog, err := b.BlogPostUsecase.GetBlogByID(ctx, blog_id)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, domain.ErrorResponse{
+			Message: "Failed to retrieve blog",
+			Error:   err.Error(),
+			Code:    http.StatusInternalServerError,
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, domain.SuccessResponse{
+		Message: "Successfully retrieved blog",
+		Data:    blog,
+	})
+}

@@ -20,7 +20,7 @@ func NewBlogRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Database) 
 	}
 
 	blogGroup.GET("/", blog_post_controller.GetBlogPosts) // Get all blogs with optional filters
-	// blogGroup.GET("/:id", blog_controller.GetBlogByID) // Get a single blog by ID
+	blogGroup.GET("/:id", blog_post_controller.GetBlogByID) // Get a single blog by ID
 	// blogGroup.POST("/", blog_controller.CreateBlog) // Create a new blog
 	// blogGroup.PUT("/:id", blog_controller.UpdateBlog) // Update an existing blog
 	// blogGroup.DELETE("/:id", blog_controller.DeleteBlog) // Delete a blog by ID
