@@ -18,7 +18,7 @@ type Env struct {
 	AccTEMinutes int    `mapstructure:"ACCESS_TOKEN_EXPIRE_MINUTES"`
 	CtxTSeconds  int    `mapstructure:"CONTEXT_TIMEOUT_SECONDS"`
 
-	// blog defaults
+	// blog post defaults
 	Page           int    `mapstructure:"PAGE"`
 	PageSize       int    `mapstructure:"PAGE_SIZE"`
 	Recency        string `mapstructure:"RECENCY"`

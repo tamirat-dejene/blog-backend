@@ -7,44 +7,44 @@ import (
 	"time"
 )
 
-type blogUsecase struct {
-	blogRepo   domain.BlogRepository
+type blogPostUsecase struct {
+	blogPostRepo   domain.BlogPostRepository
 	ctxtimeout time.Duration
 }
 
 // CreateBlog implements domain.BlogUsecase.
-func (b *blogUsecase) CreateBlog(ctx context.Context, blog *domain.Blog) (*domain.Blog, error) {
+func (b *blogPostUsecase) CreateBlog(ctx context.Context, blog *domain.BlogPost) (*domain.BlogPost, error) {
 	// example implement
 	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
 	defer cancel()
 
-	return b.blogRepo.Create(c, blog)
+	return b.blogPostRepo.Create(c, blog)
 }
 
 // DeleteBlog implements domain.BlogUsecase.
-func (b *blogUsecase) DeleteBlog(ctx context.Context, id string) error {
+func (b *blogPostUsecase) DeleteBlog(ctx context.Context, id string) error {
 	panic("unimplemented")
 }
 
 // GetBlogs implements domain.BlogUsecase.
-func (b *blogUsecase) GetBlogs(ctx context.Context, filter *domain.BlogFilter) ([]domain.Blog, error) {
+func (b *blogPostUsecase) GetBlogs(ctx context.Context, filter *domain.BlogPostFilter) ([]domain.BlogPost, error) {
 	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
 	defer cancel()
 
-	return b.blogRepo.Get(c, filter)
+	return b.blogPostRepo.Get(c, filter)
 }
 
 // UpdateBlog implements domain.BlogUsecase.
-func (b *blogUsecase) UpdateBlog(ctx context.Context, id string, blog domain.Blog) (domain.Blog, error) {
+func (b *blogPostUsecase) UpdateBlog(ctx context.Context, id string, blog domain.BlogPost) (domain.BlogPost, error) {
 	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
 	defer cancel()
 
-	return b.blogRepo.Update(c, id, blog)
+	return b.blogPostRepo.Update(c, id, blog)
 }
 
-func NewBlogUsecase(blogRepo domain.BlogRepository, timeout time.Duration) domain.BlogUsecase {
-	return &blogUsecase{
-		blogRepo:   blogRepo,
+func NewBlogPostUsecase(blogPostRepo domain.BlogPostRepository, timeout time.Duration) domain.BlogPostUsecase {
+	return &blogPostUsecase{
+		blogPostRepo:   blogPostRepo,
 		ctxtimeout: timeout,
 	}
 }
