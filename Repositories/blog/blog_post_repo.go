@@ -2,11 +2,12 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	domain "g6/blog-api/Domain"
 	"g6/blog-api/Infrastructure/database/mongo"
 	"g6/blog-api/Infrastructure/database/mongo/mapper"
 	"g6/blog-api/Infrastructure/database/mongo/utils"
-  
+
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -14,7 +15,7 @@ import (
 )
 
 type blogPostRepo struct {
-	db         mongo.Database
+	db          mongo.Database
 	collections *collections
 }
 
@@ -44,53 +45,22 @@ func (b *blogPostRepo) Delete(ctx context.Context, id string) error {
 }
 
 // Get implements domain.BlogRepository.
-func (b *blogPostRepo) Get(ctx context.Context, filter *domain.BlogPostFilter) ([]domain.BlogPost, error) {
+func (b *blogPostRepo) Get(ctx context.Context, filter *domain.BlogPostFilter) ([]domain.BlogPostsPage, error) {
 	collection := b.db.Collection(b.collections.BlogPosts)
-
-	query := utils.BuildBlogPostFilterQuery(filter)
-	var pipeline []bson.D
-
-	// Always start with a match stage
-	pipeline = append(pipeline, bson.D{{Key: "$match", Value: query}})
-
-	// Sorting logic
-	switch {
-	case filter.Popular:
-		pipeline = append(pipeline, bson.D{{Key: "$sort", Value: bson.D{{Key: "popularity_score", Value: -1}}}})
-	case filter.Recency != "":
-		pipeline = append(pipeline, bson.D{{Key: "$sort", Value: utils.RecencySort(filter.Recency)}})
-	default:
-		pipeline = append(pipeline, bson.D{{Key: "$sort", Value: bson.D{{Key: "created_at", Value: -1}}}})
-	}
-
-	// Pagination stage
-	skip := max((filter.Page - 1) * filter.PageSize, 0)
-	if filter.PageSize <= 0 {
-		filter.PageSize = 10
-	}
-
-	pipeline = append(pipeline,
-		bson.D{{Key: "$skip", Value: skip}},
-		bson.D{{Key: "$limit", Value: filter.PageSize}},
-	)
+	pipeline := utils.BuildBlogRetrievalAggregationPipeline(filter)
 
 	cursor, err := collection.Aggregate(ctx, pipeline)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("aggregate blog posts failed: %w", err)
 	}
 	defer cursor.Close(ctx)
 
-	var results []mapper.BlogPostModel
-	if err = cursor.All(ctx, &results); err != nil {
-		return nil, err
+	var dbResults []mapper.BlogPostModel
+	if err := cursor.All(ctx, &dbResults); err != nil {
+		return nil, fmt.Errorf("decoding blog posts failed: %w", err)
 	}
 
-	blogs := make([]domain.BlogPost, 0, len(results))
-	for _, bm := range results {
-		blogs = append(blogs, *mapper.BlogToDomain(&bm))
-	}
-
-	return blogs, nil
+	return utils.PaginateBlogs(dbResults, filter.PageSize), nil
 }
 
 // Update implements domain.BlogRepository.
@@ -117,7 +87,7 @@ func (b *blogPostRepo) Update(ctx context.Context, id string, blog domain.BlogPo
 
 func NewBlogPostRepo(database mongo.Database, collections *collections) domain.BlogPostRepository {
 	return &blogPostRepo{
-		db:         database,
+		db:          database,
 		collections: collections,
 	}
 }

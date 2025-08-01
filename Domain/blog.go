@@ -21,6 +21,12 @@ type BlogPost struct {
 	PopularityScore int // computed popularity score : score =  Normalized((likes * 3) + (views * 2) + (comments * 1.5) - (dislikes * 2.5))
 }
 
+type BlogPostsPage struct {
+	Blogs             []BlogPost
+	PageNumber int
+	PageSize   int
+}
+
 type BlogComment struct {
 	ID        string
 	BlogID    string
@@ -60,7 +66,7 @@ type BlogPostRepository interface {
 	Create(ctx context.Context, blog *BlogPost) (*BlogPost, error)
 	Update(ctx context.Context, id string, blog BlogPost) (BlogPost, error)
 	Delete(ctx context.Context, id string) error
-	Get(ctx context.Context, filter *BlogPostFilter) ([]BlogPost, error)
+	Get(ctx context.Context, filter *BlogPostFilter) ([]BlogPostsPage, error)
 
 	//... more methods can be added based on the usecases
 }
@@ -78,7 +84,7 @@ type BlogUserReactionRepository interface {
 
 // Usecase Interfaces define the business logic for handling blogs, comments, and user reactions.
 type BlogPostUsecase interface {
-	GetBlogs(ctx context.Context, filter *BlogPostFilter) ([]BlogPost, error)
+	GetBlogs(ctx context.Context, filter *BlogPostFilter) ([]BlogPostsPage, error)
 	CreateBlog(ctx context.Context, blog *BlogPost) (*BlogPost, error)
 	UpdateBlog(ctx context.Context, id string, blog BlogPost) (BlogPost, error)
 	DeleteBlog(ctx context.Context, id string) error

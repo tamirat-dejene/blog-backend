@@ -31,4 +31,4 @@ go.work.sum
 # .idea/
 # .vscode/
 
-blogs.json
+blog_posts.json

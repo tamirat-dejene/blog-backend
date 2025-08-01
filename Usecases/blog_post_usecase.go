@@ -27,7 +27,7 @@ func (b *blogPostUsecase) DeleteBlog(ctx context.Context, id string) error {
 }
 
 // GetBlogs implements domain.BlogUsecase.
-func (b *blogPostUsecase) GetBlogs(ctx context.Context, filter *domain.BlogPostFilter) ([]domain.BlogPost, error) {
+func (b *blogPostUsecase) GetBlogs(ctx context.Context, filter *domain.BlogPostFilter) ([]domain.BlogPostsPage, error) {
 	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
 	defer cancel()
 
