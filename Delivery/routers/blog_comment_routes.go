@@ -10,18 +10,30 @@ import (
 )
 
 func NewBlogCommentRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Database) {
-	comments := api.Group("/blog/:blogID/comments")
-
 	comment_controller := controllers.BlogCommentController{
-		CommentRepo: repository.NewBlogCommentRepository(db, repository.NewCollections(env.BlogCommentCollection, env.BlogPostCollection, env.BlogUserReactionCollection)),
-		Env:         env,
+		CommentRepo: repository.NewBlogCommentRepository(
+			db,
+			repository.NewCollections(
+				env.BlogCommentCollection,
+				env.BlogPostCollection,
+				env.BlogUserReactionCollection,
+			),
+		),
+		Env: env,
 	}
 
+	// Routes for managing comments on a specific blog
+	blogComments := api.Group("/blogs/:blogID/comments")
 	{
-		comments.POST("/", comment_controller.CreateComment)
-		comments.DELETE("/:id", comment_controller.DeleteComment)
-		comments.GET("/:id", comment_controller.GetCommentByID)
-		comments.GET("/blog/:blogID", comment_controller.GetCommentsByBlogID)
-		comments.PUT("/:id", comment_controller.UpdateComment)
+		blogComments.POST("/", comment_controller.CreateComment)      // Create a comment for a blog
+		blogComments.GET("/", comment_controller.GetCommentsByBlogID) // Get all comments for a blog
+	}
+
+	// General comment routes (independent of blog)
+	comments := api.Group("/comments")
+	{
+		comments.GET("/:id", comment_controller.GetCommentByID)   // Get comment by ID
+		comments.PUT("/:id", comment_controller.UpdateComment)    // Update a comment by ID
+		comments.DELETE("/:id", comment_controller.DeleteComment) // Delete a comment by ID
 	}
 }
