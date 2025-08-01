@@ -31,10 +31,18 @@ func AuthMiddleware(env bootstrap.Env) gin.HandlerFunc {
 			return
 		}
 		claims := token.Claims.(jwt.MapClaims)
-		c.Set("user_id", claims["userId"].(string))
-		if role, ok := claims["role"]; ok {
-			c.Set("role", role.(string))
+		sub, ok := claims["sub"].(string)
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims: missing user id"})
+			return
 		}
+		c.Set("user_id", sub)
+
+		// Set role if present
+		if role, ok := claims["role"].(string); ok {
+			c.Set("role", role)
+		}
+
 		c.Next()
 	}
 }

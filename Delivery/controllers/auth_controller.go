@@ -252,6 +252,29 @@ func (ac *AuthController) LogoutRequest(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
 }
 
+func (ac *AuthController) ChangeRoleRequest(c *gin.Context) {
+	var req dto.ChangeRoleRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	if err := validate.Struct(req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	initiator := c.GetString("role")
+	err := ac.UserUsecase.ChangeRole(initiator, req.UserID, domain.User{
+		Role: domain.UserRole(req.Role),
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to change user role", "error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "User role changed successfully"})
+}
 // forget password here
 func (ac *AuthController) ForgotPasswordRequest(c *gin.Context) {
 
@@ -296,3 +319,5 @@ func (ac *AuthController) ResetPasswordRequest(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Password reset successfully"})
 }
+
+
