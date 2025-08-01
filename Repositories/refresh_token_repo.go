@@ -43,6 +43,6 @@ func (repo *RefreshTokenRepository) FindByToken(ctx context.Context, token strin
 }
 
 func (repo *RefreshTokenRepository) DeleteByUserID(ctx context.Context, userID string) error {
-	_, err := repo.DB.Collection(repo.Collection).DeleteOne(ctx, bson.M{"user_id": userID})
+	_, err := repo.DB.Collection(repo.Collection).DeleteOne(ctx, bson.M{"_id": userID})
 	return err
 }

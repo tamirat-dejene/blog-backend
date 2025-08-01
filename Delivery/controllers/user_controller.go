@@ -27,14 +27,17 @@ func (ctrl *UserController) Register(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
-
+	if err := validate.Struct(req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
 	user := dto.ToDomainUser(req)
 	if err := ctrl.uc.Register(&user); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
+	ctx.JSON(http.StatusCreated, dto.ToUserResponse(user))
 }
 
 

@@ -2,15 +2,17 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"g6/blog-api/Delivery/bootstrap"
 	"g6/blog-api/Delivery/routers"
-	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 // main.go - Entry point for the blog backend server. Handles server startup and graceful shutdown.
@@ -35,6 +37,9 @@ func main() {
 	app := bootstrap.App(".env")
 	env := app.Env
 	db := app.Mongo.Database(env.DB_Name)
+	fmt.Println("✅ Acquired database:", env.DB_Name)
+	fmt.Println("📄 Using User Collection:", env.UserCollection)
+	fmt.Println("📄 Using Refresh Token Collection:", env.RefreshTokenCollection)
 	defer app.CloseDBConnection()
 
 	timeout := time.Duration(env.CtxTSeconds) * time.Second
@@ -43,7 +48,7 @@ func main() {
 	routers.Setup(env, timeout, db, router)
 
 	srv := &http.Server{
-		Addr:    env.Port,
+		Addr:    ":" + env.Port,
 		Handler: router.Handler(),
 	}
 	// Start HTTP Server
