@@ -3,12 +3,10 @@ package domain
 import (
 	"context"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type User struct {
-	ID        primitive.ObjectID
+	ID        string
 	Username  string
 	Email     string
 	FirstName string
@@ -31,9 +29,10 @@ const (
 
 type IUserUsecase interface {
 	FindByUsernameOrEmail(context.Context, string) (*User, error)
+	FindUserByID(string) (*User, error)
 	// GetUserByUsername(username string) (*User, error)
-	// GetUserByEmail(email string) (*User, error)
-	// UpdateUser(id primitive.ObjectID, user *User) (*User, error)
+	GetUserByEmail(email string) (*User, error)
+	UpdateUser(id string, user *User) (*User, error)
 	// DeleteUser(id primitive.ObjectID) error
 	// GetAllUsers() ([]*User, error)
 
@@ -45,9 +44,10 @@ type IUserUsecase interface {
 
 type IUserRepository interface {
 	CreateUser(context.Context, *User) error
+	FindUserByID(context.Context, string) (*User, error)
 	GetUserByUsername(context.Context, string) (*User, error)
 	GetUserByEmail(context.Context, string) (*User, error)
-	// UpdateUser(id primitive.ObjectID, user *User) error
+	UpdateUser(context.Context, string, *User) error
 	// DeleteUser(id primitive.ObjectID) error
 	GetAllUsers(context.Context) ([]*User, error)
 	// FindUserByUsername(username string) (*User, error)

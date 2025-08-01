@@ -23,7 +23,7 @@ type UserModel struct {
 
 func UserToDomain(user *UserModel) *domain.User {
 	return &domain.User{
-		ID:        user.ID,
+		ID:        user.ID.Hex(),
 		Username:  user.Username,
 		Email:     user.Email,
 		FirstName: user.FirstName,
@@ -40,7 +40,6 @@ func UserToDomain(user *UserModel) *domain.User {
 func UserFromDomain(user *domain.User) *UserModel {
 
 	return &UserModel{
-		ID:        user.ID,
 		Username:  user.Username,
 		Email:     user.Email,
 		FirstName: user.FirstName,

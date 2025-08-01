@@ -7,11 +7,13 @@ import (
 	usercase "g6/blog-api/Usecases"
 	"time"
 
+	"g6/blog-api/Infrastructure/email"
 	"g6/blog-api/Infrastructure/security"
 
 	"g6/blog-api/Infrastructure/database/mongo"
-	"github.com/gin-gonic/gin"
+
 	"g6/blog-api/Infrastructure/middleware"
+	"github.com/gin-gonic/gin"
 )
 
 func NewAuthRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Database) {
@@ -22,15 +24,45 @@ func NewAuthRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Database) 
 		env.RefTEHours,
 	)
 
+	// user repository
+	userRepo := repositories.NewUserRepository(db, env.UserCollection)
+
+	// email service
+	emailService := email.NewGomailEmailService(
+		env.SMTPHost,
+		env.SMTPPort,
+		env.SMTPFrom,
+		env.SMTPUsername,
+		env.SMTPPassword,
+	)
+
+	// reset password repository
+	resetPasswordRepo := repositories.NewPasswordResetRepository(db, env.PasswordResetCollection)
+
+	// password reset usecase
+	passwordResetUsecase := usercase.NewPasswordResetUsecase(
+		resetPasswordRepo,
+		userRepo,
+		emailService,
+		time.Duration(env.PasswordResetExpiry)*time.Minute,
+	)
+
 	authController := controllers.AuthController{
-		UserUsecase:         usercase.NewUserUsecase(repositories.NewUserRepository(db, env.UserCollection), time.Duration(env.CtxTSeconds)*time.Second),
-		AuthService:         authService,
-		RefreshTokenUsecase: usercase.NewRefreshTokenUsecase(repositories.NewRefreshTokenRepository(db, env.RefreshTokenCollection)),
+		UserUsecase:          usercase.NewUserUsecase(repositories.NewUserRepository(db, env.UserCollection), time.Duration(env.CtxTSeconds)*time.Second),
+		AuthService:          authService,
+		RefreshTokenUsecase:  usercase.NewRefreshTokenUsecase(repositories.NewRefreshTokenRepository(db, env.RefreshTokenCollection)),
+		PasswordResetUsecase: passwordResetUsecase,
 	}
 
-	api.POST("/register", authController.RegisterRequest)
-	api.POST("/login", authController.LoginRequest)
-	//protected routes
-	api.POST("/logout", middleware.AuthMiddleware(*env), authController.LogoutRequest)
+	auth := api.Group("/auth/")
+	{
+		auth.POST("/register", authController.RegisterRequest)
+		auth.POST("/login", authController.LoginRequest)
+		//protected routes
+		auth.POST("/logout", middleware.AuthMiddleware(*env), authController.LoginRequest)
+		auth.POST("/forgot-password", authController.ForgotPasswordRequest)
+		auth.POST("/reset-password", authController.ResetPasswordRequest)
+		auth.POST("/refresh", authController.RefreshToken)
+	}
 
 }

@@ -8,8 +8,8 @@ import (
 )
 
 type blogPostUsecase struct {
-	blogPostRepo   domain.BlogPostRepository
-	ctxtimeout time.Duration
+	blogPostRepo domain.BlogPostRepository
+	ctxtimeout   time.Duration
 }
 
 // CreateBlog implements domain.BlogUsecase.
@@ -23,7 +23,10 @@ func (b *blogPostUsecase) CreateBlog(ctx context.Context, blog *domain.BlogPost)
 
 // DeleteBlog implements domain.BlogUsecase.
 func (b *blogPostUsecase) DeleteBlog(ctx context.Context, id string) error {
-	panic("unimplemented")
+	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
+	defer cancel()
+
+	return b.blogPostRepo.Delete(c, id)
 }
 
 // GetBlogs implements domain.BlogUsecase.
@@ -52,7 +55,7 @@ func (b *blogPostUsecase) UpdateBlog(ctx context.Context, id string, blog domain
 
 func NewBlogPostUsecase(blogPostRepo domain.BlogPostRepository, timeout time.Duration) domain.BlogPostUsecase {
 	return &blogPostUsecase{
-		blogPostRepo:   blogPostRepo,
-		ctxtimeout: timeout,
+		blogPostRepo: blogPostRepo,
+		ctxtimeout:   timeout,
 	}
 }
