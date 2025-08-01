@@ -13,6 +13,7 @@ func NewUserRoutes(env *bootstrap.Env, group *gin.RouterGroup, db mongo.Database
 	// uu := userUsecase.NewUserUsecase(ur, time.Duration(env.CtxTSeconds)*time.Second)
 	// uc := controllers.NewUserController(uu)
 
+
 	// group.POST("/users//", uc.CreateUser)
 
 }

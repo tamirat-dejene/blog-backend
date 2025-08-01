@@ -81,3 +81,22 @@ func (ac *AuthController) LoginRequest(c *gin.Context) {
 		RefreshToken: response.RefreshToken,
 	})
 }
+
+func (ac *AuthController) LogoutRequest(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	uid, ok := userID.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID type"})
+		return
+	}
+
+	if err := ac.RefreshTokenUsecase.DeleteByUserID(uid); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to log out"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "User logged out successfully"})
+}

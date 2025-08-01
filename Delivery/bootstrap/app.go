@@ -21,6 +21,8 @@ func App(envPath string) Application {
 	mongo_client, err := mongo.NewClient(env.DB_Uri)
 	if err != nil {
 		log.Fatal(err)
+	} else {
+		log.Println("MongoDB client created successfully")
 	}
 
 	app.Mongo = mongo_client
