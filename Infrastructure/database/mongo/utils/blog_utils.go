@@ -77,7 +77,7 @@ func BuildBlogRetrievalAggregationPipeline(filter *domain.BlogPostFilter) []bson
 	}
 
 	pipeline = append(pipeline,
-		bson.D{{Key: "$skip", Value: max((filter.Page-1)*filter.PageSize, 0)}},
+		// bson.D{{Key: "$skip", Value: max((filter.Page-1)*filter.PageSize, 0)}},
 		bson.D{{Key: "$limit", Value: filter.PageSize * filter.Page}},
 	)
 

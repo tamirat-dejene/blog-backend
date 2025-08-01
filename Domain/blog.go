@@ -22,7 +22,7 @@ type BlogPost struct {
 }
 
 type BlogPostsPage struct {
-	Blogs             []BlogPost
+	Blogs      []BlogPost
 	PageNumber int
 	PageSize   int
 }
@@ -67,6 +67,7 @@ type BlogPostRepository interface {
 	Update(ctx context.Context, id string, blog BlogPost) (BlogPost, error)
 	Delete(ctx context.Context, id string) error
 	Get(ctx context.Context, filter *BlogPostFilter) ([]BlogPostsPage, error)
+	GetBlogByID(ctx context.Context, id string) (*BlogPost, error)
 
 	//... more methods can be added based on the usecases
 }
@@ -85,6 +86,7 @@ type BlogUserReactionRepository interface {
 // Usecase Interfaces define the business logic for handling blogs, comments, and user reactions.
 type BlogPostUsecase interface {
 	GetBlogs(ctx context.Context, filter *BlogPostFilter) ([]BlogPostsPage, error)
+	GetBlogByID(ctx context.Context, id string) (*BlogPost, error)
 	CreateBlog(ctx context.Context, blog *BlogPost) (*BlogPost, error)
 	UpdateBlog(ctx context.Context, id string, blog BlogPost) (BlogPost, error)
 	DeleteBlog(ctx context.Context, id string) error
