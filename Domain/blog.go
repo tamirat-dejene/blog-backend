@@ -73,8 +73,11 @@ type BlogPostRepository interface {
 }
 
 type BlogCommentRepository interface {
-	Create(ctx context.Context, comment BlogComment) (BlogComment, error)
+	Create(ctx context.Context, comment BlogComment) (*BlogComment, error)
 	Delete(ctx context.Context, id string) error
+	Update(ctx context.Context, id string, comment BlogComment) (*BlogComment, error)
+	GetCommentsByBlogID(ctx context.Context, blogID string) ([]BlogComment, error)
+	GetCommentByID(ctx context.Context, id string) (*BlogComment, error)
 }
 
 type BlogUserReactionRepository interface {
@@ -93,8 +96,11 @@ type BlogPostUsecase interface {
 }
 
 type BlogCommentUsecase interface {
-	CreateComment(ctx context.Context, comment BlogComment) (BlogComment, error)
+	CreateComment(ctx context.Context, comment BlogComment) (*BlogComment, error)
 	DeleteComment(ctx context.Context, id string) error
+	GetCommentsByBlogID(ctx context.Context, blogID string) ([]BlogComment, error)
+	GetCommentByID(ctx context.Context, id string) (*BlogComment, error)
+	UpdateComment(ctx context.Context, id string, comment BlogComment) (*BlogComment, error)
 }
 
 type BlogUserReactionUsecase interface {
