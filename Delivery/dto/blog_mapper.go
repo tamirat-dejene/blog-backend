@@ -29,7 +29,7 @@ type BlogPostResponse struct {
 }
 
 type BlogIDParams struct {
-	BlogID string `uri:"blogID" binding:"required"`
+	BlogID string `uri:"id" binding:"required"`
 }
 
 type BlogUserReactionRequest struct {
