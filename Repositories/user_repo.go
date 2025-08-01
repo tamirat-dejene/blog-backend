@@ -25,7 +25,7 @@ func NewUserRepository(db mongo.Database, collection string) domain.IUserReposit
 }
 
 func (repo *UserRepository) CreateUser(ctx context.Context, user *domain.User) error {
-	user.ID = primitive.NewObjectID()
+	// user.ID = primitive.NewObjectID()
 	usermodel := mapper.UserFromDomain(user)
 	_, err := repo.DB.Collection(repo.Collection).InsertOne(ctx, usermodel)
 	if err != nil {
@@ -55,6 +55,29 @@ func (repo *UserRepository) GetAllUsers(ctx context.Context) ([]*domain.User, er
 	}
 
 	return mapper.UserToDomainList(users), nil
+}
+
+func (repo *UserRepository) UpdateUser(ctx context.Context, id string, user *domain.User) error {
+	userModel := mapper.UserFromDomain(user)
+	userModel.ID, _ = primitive.ObjectIDFromHex(id)
+	_, err := repo.DB.Collection(repo.Collection).UpdateOne(ctx, bson.M{"_id": userModel.ID}, bson.M{"$set": userModel})
+	return err
+}
+
+func (repo *UserRepository) FindUserByID(ctx context.Context, id string) (*domain.User, error) {
+	uid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user ID: %v", err)
+	}
+	var userModel *mapper.UserModel
+	err = repo.DB.Collection(repo.Collection).FindOne(ctx, bson.M{"_id": uid}).Decode(&userModel)
+	if err != nil {
+		if err == mongo.ErrNoDocuments() {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, err
+	}
+	return mapper.UserToDomain(userModel), nil
 }
 
 func (repo *UserRepository) GetUserByUsername(ctx context.Context, username string) (*domain.User, error) {

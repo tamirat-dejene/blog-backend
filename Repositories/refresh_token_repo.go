@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 	domain "g6/blog-api/Domain"
-	"g6/blog-api/Infrastructure/database"
 
 	"g6/blog-api/Infrastructure/database/mongo"
+	"g6/blog-api/Infrastructure/database/mongo/mapper"
+
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -23,7 +24,7 @@ func NewRefreshTokenRepository(db mongo.Database, collection string) domain.IRef
 }
 
 func (repo *RefreshTokenRepository) Save(ctx context.Context, token *domain.RefreshToken) error {
-	tokenDb := database.FromRefreshTokenEntityToDB(token)
+	tokenDb := mapper.FromRefreshTokenEntityToDB(token)
 	if _, err := repo.DB.Collection(repo.Collection).InsertOne(ctx, tokenDb); err != nil {
 		return err
 	}
@@ -31,7 +32,7 @@ func (repo *RefreshTokenRepository) Save(ctx context.Context, token *domain.Refr
 }
 
 func (repo *RefreshTokenRepository) FindByToken(ctx context.Context, token string) (*domain.RefreshToken, error) {
-	var tokenDB database.RefreshTokenDB
+	var tokenDB mapper.RefreshTokenDB
 	err := repo.DB.Collection(repo.Collection).FindOne(ctx, bson.M{"token": token}).Decode(&tokenDB)
 	if err != nil {
 		if err == mongo.ErrNoDocuments() {
@@ -39,10 +40,50 @@ func (repo *RefreshTokenRepository) FindByToken(ctx context.Context, token strin
 		}
 		return nil, err
 	}
-	return database.FromRefreshTokenDBToEntity(&tokenDB), nil
+	return mapper.FromRefreshTokenDBToEntity(&tokenDB), nil
 }
 
 func (repo *RefreshTokenRepository) DeleteByUserID(ctx context.Context, userID string) error {
 	_, err := repo.DB.Collection(repo.Collection).DeleteOne(ctx, bson.M{"_id": userID})
 	return err
+}
+
+func (repo *RefreshTokenRepository) ReplaceTokenByUserID(ctx context.Context, token *domain.RefreshToken) error {
+	tokenDB := mapper.FromRefreshTokenEntityToDB(token)
+	_, err := repo.DB.Collection(repo.Collection).UpdateOne(
+		ctx,
+		bson.M{"user_id": token.UserID},
+		bson.M{"$set": tokenDB},
+	)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	}
+	return nil
+}
+
+// revoke refresh token
+func (repo *RefreshTokenRepository) RevokeToken(ctx context.Context, token string) error {
+	_, err := repo.DB.Collection(repo.Collection).UpdateOne(
+		ctx,
+		bson.M{"token": token},
+		bson.M{"$set": bson.M{"revoked": true}},
+	)
+	if err != nil {
+		return fmt.Errorf("failed to revoke token: %w", err)
+	}
+	return nil
+}
+
+// find token by user id
+func (repo *RefreshTokenRepository) FindTokenByUserID(ctx context.Context, userID string) (*domain.RefreshToken, error) {
+	var tokenDB mapper.RefreshTokenDB
+	err := repo.DB.Collection(repo.Collection).FindOne(ctx, bson.M{"user_id": userID}).Decode(&tokenDB)
+	if err != nil {
+		if err == mongo.ErrNoDocuments() {
+			return nil, fmt.Errorf("refresh token not found")
+		}
+		return nil, err
+	}
+	return mapper.FromRefreshTokenDBToEntity(&tokenDB), nil
 }

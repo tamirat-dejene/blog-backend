@@ -2,7 +2,6 @@ package dto
 
 import (
 	domain "g6/blog-api/Domain"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
 )
 
@@ -35,7 +34,6 @@ type UserResponse struct {
 
 func ToDomainUser(req UserRequest) domain.User {
 	return domain.User{
-		ID:        primitive.NewObjectID(),
 		Username:  req.Username,
 		Email:     req.Email,
 		Password:  req.Password, // Ensure to hash the password before saving to the domain
@@ -51,7 +49,7 @@ func ToDomainUser(req UserRequest) domain.User {
 
 func ToUserResponse(user domain.User) UserResponse {
 	return UserResponse{
-		ID:        user.ID.Hex(),
+		ID:        user.ID,
 		Username:  user.Username,
 		Email:     user.Email,
 		FirstName: user.FirstName,

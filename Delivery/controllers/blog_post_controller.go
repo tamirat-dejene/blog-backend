@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"g6/blog-api/Delivery/bootstrap"
+	"g6/blog-api/Delivery/dto"
 	domain "g6/blog-api/Domain"
 	"net/http"
 	"strconv"
@@ -90,4 +91,55 @@ func (b *BlogPostController) GetBlogPostByID(ctx *gin.Context) {
 		Message: "Successfully retrieved blog",
 		Data:    blog,
 	})
+}
+
+func (b *BlogPostController) CreateBlog(ctx *gin.Context) {
+	var req dto.BlogPostRequest
+
+	if err := ctx.ShouldBind(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+	blog := dto.ToDomainBlogPost(req)
+	createdBlog, err := b.BlogPostUsecase.CreateBlog(ctx, &blog)
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, createdBlog)
+}
+
+func (b *BlogPostController) UpdateBlog(ctx *gin.Context) {
+	id := ctx.Param("id")
+	var req dto.BlogPostRequest
+
+	if err := ctx.ShouldBind(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+	blog := dto.ToDomainBlogPost(req)
+
+	updatedBlog, err := b.BlogPostUsecase.UpdateBlog(ctx, id, blog)
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, updatedBlog)
+
+}
+
+func (b *BlogPostController) DeleteBlog(ctx *gin.Context) {
+	id := ctx.Param("id")
+
+	err := b.BlogPostUsecase.DeleteBlog(ctx, id)
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"message": "Successfully deleted"})
 }

@@ -18,11 +18,11 @@ type Env struct {
 	AccTEMinutes int    `mapstructure:"ACCESS_TOKEN_EXPIRE_MINUTES"`
 	CtxTSeconds  int    `mapstructure:"CONTEXT_TIMEOUT_SECONDS"`
 
-	// blog post defaults
+	// blog defaults
 	Page           int    `mapstructure:"PAGE"`
 	PageSize       int    `mapstructure:"PAGE_SIZE"`
 	Recency        string `mapstructure:"RECENCY"`
-	BlogPostCollection string `mapstructure:"BLOG_POST_COLLECTION"`
+	BlogCollection string `mapstructure:"BLOG_COLLECTION"`
 
 	// blog comment defaults
 	BlogCommentCollection string `mapstructure:"BLOG_COMMENT_COLLECTION"`
@@ -34,26 +34,12 @@ type Env struct {
 
 	// user refresh token collection
 	RefreshTokenCollection string `mapstructure:"REFRESH_TOKEN_COLLECTION"`
-
-	// password reset token collection
-	PasswordResetCollection string `mapstructure:"PASSWORD_RESET_TOKEN_COLLECTION"`
-	// password reset token expiry
-	PasswordResetExpiry int `mapstructure:"PASSWORD_RESET_TOKEN_EXPIRE_MINUTES"` // in minutes
-
-	// email configuration
-	SMTPHost     string `mapstructure:"SMTP_HOST"`
-	SMTPPort     int    `mapstructure:"SMTP_PORT"`
-	SMTPFrom     string `mapstructure:"SMTP_FROM"`
-	SMTPUsername string `mapstructure:"SMTP_USERNAME"`
-	SMTPPassword string `mapstructure:"SMTP_PASSWORD"` // App Password for Gmail
-	ResetURL     string `mapstructure:"RESET_URL"`
 }
 
 // Viper can be made injectable
 func NewEnv(env_file_path string) (*Env, error) {
 	v := viper.New()
 	v.SetConfigFile(env_file_path)
-
 	if err := v.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
