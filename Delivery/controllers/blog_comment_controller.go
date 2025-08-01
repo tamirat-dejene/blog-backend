@@ -10,16 +10,10 @@ import (
 )
 
 type BlogCommentController struct {
-	CommentRepo domain.BlogCommentRepository
+	BlogCommentUsecase domain.BlogCommentUsecase
 	Env         *bootstrap.Env
 }
 
-func NewBlogCommentController(commentRepo domain.BlogCommentRepository, env *bootstrap.Env) *BlogCommentController {
-	return &BlogCommentController{
-		CommentRepo: commentRepo,
-		Env:         env,
-	}
-}
 
 func (b *BlogCommentController) CreateComment(ctx *gin.Context) {
 	// Implementation for creating a comment
@@ -43,7 +37,7 @@ func (b *BlogCommentController) GetCommentByID(ctx *gin.Context) {
 		return
 	}
 
-	comment, domain_err := b.CommentRepo.GetCommentByID(ctx, uriParams.id)
+	comment, domain_err := b.BlogCommentUsecase.GetCommentByID(ctx, uriParams.id)
 	if domain_err != nil {
 		ctx.JSON(domain_err.Code, domain.ErrorResponse{
 			Message: domain_err.Err.Error(),
@@ -80,7 +74,7 @@ func (b *BlogCommentController) GetCommentsByBlogID(ctx *gin.Context) {
 		return
 	}
 
-	comments, domain_err := b.CommentRepo.GetCommentsByBlogID(ctx, uriParams.BlogID, limitInt)
+	comments, domain_err := b.BlogCommentUsecase.GetCommentsByBlogID(ctx, uriParams.BlogID, limitInt)
 
 	if domain_err != nil {
 		ctx.JSON(domain_err.Code, domain.ErrorResponse{
