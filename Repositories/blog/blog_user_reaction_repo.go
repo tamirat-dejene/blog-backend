@@ -5,10 +5,8 @@ import (
 	domain "g6/blog-api/Domain"
 	"g6/blog-api/Infrastructure/database/mongo"
 	"g6/blog-api/Infrastructure/database/mongo/mapper"
-	"net/http"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -153,12 +151,7 @@ func (u *BlogUserReactionRepo) GetUserReaction(ctx context.Context, blogID strin
 	err := u.db.Collection(u.collections.BlogUserReactions).FindOne(ctx, filter).Decode(&reaction)
 
 	if err != nil {
-		if err.Error() == "no reaction found" {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": "Reaction not found"})
-		} else {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		}
-		return
+		return domain.BlogUserReaction{}, err
 	}
 
 	response := mapper.BlogUserReactionToDomain(&reaction)
