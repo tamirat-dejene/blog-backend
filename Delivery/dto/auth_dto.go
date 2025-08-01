@@ -26,3 +26,7 @@ type ResetPasswordRequest struct {
 	Token       string `json:"token" binding:"required"`
 	NewPassword string `json:"new_password" binding:"required,min=6"`
 }
+
+type ChangeRoleRequest struct {
+	Role string `json:"role" validate:"required,oneof=admin user superadmin"`
+}

@@ -5,17 +5,26 @@ import (
 	"time"
 )
 
-type Blog struct {
-	ID        string
-	Title     string
-	Content   string
-	AuthorID  string
-	Tags      []string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	Likes     int
-	Dislikes  int
-	ViewCount int
+type BlogPost struct {
+	ID              string
+	Title           string
+	Content         string
+	AuthorID        string
+	AuthorName      string // for easy access to author's name: first_name + last_name
+	Tags            []string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	Likes           int
+	Dislikes        int
+	ViewCount       int
+	CommentCount    int // for easy access to comment count
+	PopularityScore int // computed popularity score : score =  Normalized((likes * 3) + (views * 2) + (comments * 1.5) - (dislikes * 2.5))
+}
+
+type BlogPostsPage struct {
+	Blogs      []BlogPost
+	PageNumber int
+	PageSize   int
 }
 
 type BlogComment struct {
@@ -42,28 +51,33 @@ const (
 	RecencyOldest Recency = "oldest"
 )
 
-type BlogFilter struct {
-	Page     int
-	PageSize int
-	Recency  Recency
-	Tags     []string
+type BlogPostFilter struct {
+	Page       int
+	PageSize   int
+	Recency    Recency
+	Tags       []string
 	AuthorName string
-	Title    string
+	Title      string
+	Popular    bool // indicates if the filter is for most popular blogs
 }
 
 // Repository Interfaces provide an abstraction layer for data access operations related to blogs, comments, and user reactions.
-type BlogRepository interface {
-	Create(ctx context.Context, blog *Blog) (*Blog, error)
-	Update(ctx context.Context, id string, blog Blog) (Blog, error)
+type BlogPostRepository interface {
+	Create(ctx context.Context, blog *BlogPost) (*BlogPost, error)
+	Update(ctx context.Context, id string, blog BlogPost) (BlogPost, error)
 	Delete(ctx context.Context, id string) error
-	Get(ctx context.Context, filter *BlogFilter) ([]Blog, error)
+	Get(ctx context.Context, filter *BlogPostFilter) ([]BlogPostsPage, error)
+	GetBlogByID(ctx context.Context, id string) (*BlogPost, error)
 
 	//... more methods can be added based on the usecases
 }
 
 type BlogCommentRepository interface {
-	Create(ctx context.Context, comment BlogComment) (Blog, error)
+	Create(ctx context.Context, comment BlogComment) (*BlogComment, error)
 	Delete(ctx context.Context, id string) error
+	Update(ctx context.Context, id string, comment BlogComment) (*BlogComment, error)
+	GetCommentsByBlogID(ctx context.Context, blogID string) ([]BlogComment, error)
+	GetCommentByID(ctx context.Context, id string) (*BlogComment, error)
 }
 
 type BlogUserReactionRepository interface {
@@ -73,16 +87,20 @@ type BlogUserReactionRepository interface {
 }
 
 // Usecase Interfaces define the business logic for handling blogs, comments, and user reactions.
-type BlogUsecase interface {
-	GetBlogs(ctx context.Context, filter *BlogFilter) ([]Blog, error)
-	CreateBlog(ctx context.Context, blog *Blog) (*Blog, error)
-	UpdateBlog(ctx context.Context, id string, blog Blog) (Blog, error)
+type BlogPostUsecase interface {
+	GetBlogs(ctx context.Context, filter *BlogPostFilter) ([]BlogPostsPage, error)
+	GetBlogByID(ctx context.Context, id string) (*BlogPost, error)
+	CreateBlog(ctx context.Context, blog *BlogPost) (*BlogPost, error)
+	UpdateBlog(ctx context.Context, id string, blog BlogPost) (BlogPost, error)
 	DeleteBlog(ctx context.Context, id string) error
 }
 
 type BlogCommentUsecase interface {
-	CreateComment(ctx context.Context, comment BlogComment) (Blog, error)
+	CreateComment(ctx context.Context, comment BlogComment) (*BlogComment, error)
 	DeleteComment(ctx context.Context, id string) error
+	GetCommentsByBlogID(ctx context.Context, blogID string) ([]BlogComment, error)
+	GetCommentByID(ctx context.Context, id string) (*BlogComment, error)
+	UpdateComment(ctx context.Context, id string, comment BlogComment) (*BlogComment, error)
 }
 
 type BlogUserReactionUsecase interface {

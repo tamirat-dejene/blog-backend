@@ -44,10 +44,7 @@ func (repo *RefreshTokenRepository) FindByToken(ctx context.Context, token strin
 }
 
 func (repo *RefreshTokenRepository) DeleteByUserID(ctx context.Context, userID string) error {
-	deleteCount, err := repo.DB.Collection(repo.Collection).DeleteOne(ctx, bson.M{"user_id": userID})
-	if deleteCount == 0 {
-		return fmt.Errorf("no refresh token found for user ID: %s", userID)
-	}
+	_, err := repo.DB.Collection(repo.Collection).DeleteOne(ctx, bson.M{"_id": userID})
 	return err
 }
 

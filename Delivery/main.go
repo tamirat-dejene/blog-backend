@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"g6/blog-api/Delivery/bootstrap"
 	"g6/blog-api/Delivery/routers"
 	"log"
@@ -17,7 +18,7 @@ import (
 // main.go - Entry point for the blog backend server. Handles server startup and graceful shutdown.
 
 func close_server(srv *http.Server) {
-	quit := make(chan os.Signal)
+	quit := make(chan os.Signal, 1)
 
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
@@ -36,6 +37,9 @@ func main() {
 	app := bootstrap.App(".env")
 	env := app.Env
 	db := app.Mongo.Database(env.DB_Name)
+	fmt.Println("✅ Acquired database:", env.DB_Name)
+	fmt.Println("📄 Using User Collection:", env.UserCollection)
+	fmt.Println("📄 Using Refresh Token Collection:", env.RefreshTokenCollection)
 	defer app.CloseDBConnection()
 
 	timeout := time.Duration(env.CtxTSeconds) * time.Second
@@ -44,7 +48,7 @@ func main() {
 	routers.Setup(env, timeout, db, router)
 
 	srv := &http.Server{
-		Addr:    env.Port,
+		Addr:    ":" + env.Port,
 		Handler: router.Handler(),
 	}
 	// Start HTTP Server

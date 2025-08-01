@@ -12,6 +12,7 @@ import (
 
 	"g6/blog-api/Infrastructure/database/mongo"
 
+	"g6/blog-api/Infrastructure/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -57,7 +58,8 @@ func NewAuthRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Database) 
 	{
 		auth.POST("/register", authController.RegisterRequest)
 		auth.POST("/login", authController.LoginRequest)
-		auth.POST("/logout", authController.LogoutRequest)
+		//protected routes
+		auth.POST("/logout", middleware.AuthMiddleware(*env), authController.LoginRequest)
 		auth.POST("/forgot-password", authController.ForgotPasswordRequest)
 		auth.POST("/reset-password", authController.ResetPasswordRequest)
 		auth.POST("/refresh", authController.RefreshToken)
