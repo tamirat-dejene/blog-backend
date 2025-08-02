@@ -1,17 +1,12 @@
 package dto
 
-import (
-	domain "g6/blog-api/Domain"
-	"time"
-)
+import domain "g6/blog-api/Domain"
 
-type BlogAIGenerateRequest struct {
+type AIBlogPostGenerateRequest struct {
 	Topic    string   `json:"topic" binding:"required"`
 	Keywords []string `json:"keywords" binding:"required"`
 }
-
-type BlogAIResponseDTO struct {
-	ID              string   `json:"id"`
+type AIBlogPostResponse struct {
 	Topic           string   `json:"topic"`
 	Keywords        []string `json:"keywords"`
 	Title           string   `json:"title"`
@@ -23,66 +18,28 @@ type BlogAIResponseDTO struct {
 	CreatedAt       string   `json:"created_at"`
 }
 
-type BlogAIFeedbackRequest struct {
-	ContentID string `json:"content_id" binding:"required"`
-	Rating    int    `json:"rating" binding:"required"`
-	Feedback  string `json:"feedback" binding:"required"`
-}
-
-type BlogAIFeedbackResponse struct {
-	ID        string `json:"id"`
-	UserID    string `json:"user_id"`
-	ContentID string `json:"content_id"`
-	Rating    int    `json:"rating"`
-	Feedback  string `json:"feedback"`
-}
-
-func BlogAIContentToDomain(content *BlogAIResponseDTO, userID string, createdAtTime time.Time) *domain.BlogAIContent {
-	return &domain.BlogAIContent{
-		ID:              content.ID,
-		UserID:          userID,
-		Topic:           content.Topic,
-		Keywords:        content.Keywords,
-		Title:           content.Title,
-		Introduction:    content.Introduction,
-		Body:            content.Body,
-		Conclusion:      content.Conclusion,
-		SuggestedTitles: content.SuggestedTitles,
-		RelatedIdeas:    content.RelatedIdeas,
-		CreatedAt:       createdAtTime.Format(time.RFC3339),
+func (a *AIBlogPostResponse) ToDomain() *domain.AIBlogPost {
+	return &domain.AIBlogPost{
+		Topic:           a.Topic,
+		Keywords:        a.Keywords,
+		Title:           a.Title,
+		Introduction:    a.Introduction,
+		Body:            a.Body,
+		Conclusion:      a.Conclusion,
+		SuggestedTitles: a.SuggestedTitles,
+		RelatedIdeas:    a.RelatedIdeas,
+		CreatedAt:       a.CreatedAt,
 	}
 }
 
-func BlogAIContentFromDomain(content *domain.BlogAIContent) *BlogAIResponseDTO {
-	return &BlogAIResponseDTO{
-		ID:              content.ID,
-		Topic:           content.Topic,
-		Keywords:        content.Keywords,
-		Title:           content.Title,
-		Introduction:    content.Introduction,
-		Body:            content.Body,
-		Conclusion:      content.Conclusion,
-		SuggestedTitles: content.SuggestedTitles,
-		RelatedIdeas:    content.RelatedIdeas,
-		CreatedAt:       content.CreatedAt,
-	}
-}
-
-func BlogAIFeedbackFromDomain(feedback *domain.BlogAIFeedback) *BlogAIFeedbackResponse {
-	return &BlogAIFeedbackResponse{
-		ID:        feedback.ID,
-		UserID:    feedback.UserID,
-		ContentID: feedback.ContentID,
-		Rating:    feedback.Rating,
-		Feedback:  feedback.Feedback,
-	}
-}
-
-func BlogAIFeedbackToDomain(feedback *BlogAIFeedbackRequest, userID string) *domain.BlogAIFeedback {
-	return &domain.BlogAIFeedback{
-		UserID:    userID,
-		ContentID: feedback.ContentID,
-		Rating:    feedback.Rating,
-		Feedback:  feedback.Feedback,
-	}
+func (a *AIBlogPostResponse) FromDomain(domainPost *domain.AIBlogPost) {
+	a.Topic = domainPost.Topic
+	a.Keywords = domainPost.Keywords
+	a.Title = domainPost.Title
+	a.Introduction = domainPost.Introduction
+	a.Body = domainPost.Body
+	a.Conclusion = domainPost.Conclusion
+	a.SuggestedTitles = domainPost.SuggestedTitles
+	a.RelatedIdeas = domainPost.RelatedIdeas
+	a.CreatedAt = domainPost.CreatedAt
 }

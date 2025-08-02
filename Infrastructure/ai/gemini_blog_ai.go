@@ -71,7 +71,7 @@ Return your response **strictly in the following JSON format**:
 	return resp.Text(), nil
 }
 
-func (c *GeminiConfig) ParseGeneratedContent(content string, output *dto.BlogAIResponseDTO) error {
+func (c *GeminiConfig) ParseGeneratedContent(content string, output *dto.AIBlogPostResponse) error {
 	// Parse the JSON content into the output structure.
 	if err := json.Unmarshal([]byte(content), output); err != nil {
 		return fmt.Errorf("failed to parse generated content: %w", err)
