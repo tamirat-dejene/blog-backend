@@ -11,7 +11,7 @@ type blogAIUsecase struct {
 	ctxtimeout time.Duration
 }
 
-func (b *blogAIUsecase) GenerateContent(ctx context.Context, req domain.BlogAIGenerate) (*domain.BlogAIContent, error) {
+func (b *blogAIUsecase) GenerateContent(ctx context.Context, req domain.BlogAIGenerate) (*domain.BlogAIContent, *domain.DomainError) {
 	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
 	defer cancel()
 
@@ -30,21 +30,21 @@ func (b *blogAIUsecase) GenerateContent(ctx context.Context, req domain.BlogAIGe
 	return content, nil
 }
 
-func (b *blogAIUsecase) GetGeneratedContentByID(ctx context.Context, id string) (*domain.BlogAIContent, error) {
+func (b *blogAIUsecase) GetGeneratedContentByID(ctx context.Context, id string) (*domain.BlogAIContent, *domain.DomainError) {
 	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
 	defer cancel()
 
 	return b.blogAIRepo.GetGeneratedContentByID(c, id)
 }
 
-func (b *blogAIUsecase) GetUserPromptHistory(ctx context.Context, userID string) ([]domain.BlogAIPrompt, error) {
+func (b *blogAIUsecase) GetUserPromptHistory(ctx context.Context, userID string) ([]domain.BlogAIPrompt, *domain.DomainError) {
 	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
 	defer cancel()
 
 	return b.blogAIRepo.GetPromptsByUserID(c, userID)
 }
 
-func (b *blogAIUsecase) SubmitFeedback(ctx context.Context, feedback domain.BlogAIFeedback) error {
+func (b *blogAIUsecase) SubmitFeedback(ctx context.Context, feedback domain.BlogAIFeedback) *domain.DomainError {
 	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
 	defer cancel()
 

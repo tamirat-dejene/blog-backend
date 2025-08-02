@@ -12,22 +12,22 @@ type blogAIRepository struct {
 }
 
 // GetGeneratedContentByID implements domain.BlogAIRepository.
-func (b *blogAIRepository) GetGeneratedContentByID(ctx context.Context, id string) (*domain.BlogAIContent, error) {
+func (b *blogAIRepository) GetGeneratedContentByID(ctx context.Context, id string) (*domain.BlogAIContent, *domain.DomainError) {
 	panic("unimplemented")
 }
 
 // GetPromptsByUserID implements domain.BlogAIRepository.
-func (b *blogAIRepository) GetPromptsByUserID(ctx context.Context, userID string) ([]domain.BlogAIPrompt, error) {
+func (b *blogAIRepository) GetPromptsByUserID(ctx context.Context, userID string) ([]domain.BlogAIPrompt, *domain.DomainError) {
 	panic("unimplemented")
 }
 
 // SaveFeedback implements domain.BlogAIRepository.
-func (b *blogAIRepository) SaveFeedback(ctx context.Context, feedback domain.BlogAIFeedback) error {
+func (b *blogAIRepository) SaveFeedback(ctx context.Context, feedback domain.BlogAIFeedback) *domain.DomainError {
 	panic("unimplemented")
 }
 
 // StoreGeneratedContent implements domain.BlogAIRepository.
-func (b *blogAIRepository) StoreGeneratedContent(ctx context.Context, content *domain.BlogAIContent) error {
+func (b *blogAIRepository) StoreGeneratedContent(ctx context.Context, content *domain.BlogAIContent) *domain.DomainError {
 	panic("unimplemented")
 }
 

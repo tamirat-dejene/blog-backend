@@ -1,6 +1,8 @@
 package domain
 
-import "context"
+import (
+	"context"
+)
 
 type BlogAIGenerate struct {
 	UserID   string
@@ -34,15 +36,15 @@ type BlogAIPrompt struct {
 }
 
 type BlogAIUsecase interface {
-	GenerateContent(ctx context.Context, req BlogAIGenerate) (*BlogAIContent, error)
-	GetGeneratedContentByID(ctx context.Context, id string) (*BlogAIContent, error)
-	GetUserPromptHistory(ctx context.Context, userID string) ([]BlogAIPrompt, error)
-	SubmitFeedback(ctx context.Context, feedback BlogAIFeedback) error
+	GenerateContent(ctx context.Context, req BlogAIGenerate) (*BlogAIContent, *DomainError)
+	GetGeneratedContentByID(ctx context.Context, id string) (*BlogAIContent, *DomainError)
+	GetUserPromptHistory(ctx context.Context, userID string) ([]BlogAIPrompt, *DomainError)
+	SubmitFeedback(ctx context.Context, feedback BlogAIFeedback) *DomainError
 }
 
 type BlogAIRepository interface {
-	StoreGeneratedContent(ctx context.Context, content *BlogAIContent) error
-	GetGeneratedContentByID(ctx context.Context, id string) (*BlogAIContent, error)
-	GetPromptsByUserID(ctx context.Context, userID string) ([]BlogAIPrompt, error)
-	SaveFeedback(ctx context.Context, feedback BlogAIFeedback) error
+	StoreGeneratedContent(ctx context.Context, content *BlogAIContent) *DomainError
+	GetGeneratedContentByID(ctx context.Context, id string) (*BlogAIContent, *DomainError)
+	GetPromptsByUserID(ctx context.Context, userID string) ([]BlogAIPrompt, *DomainError)
+	SaveFeedback(ctx context.Context, feedback BlogAIFeedback) *DomainError
 }
