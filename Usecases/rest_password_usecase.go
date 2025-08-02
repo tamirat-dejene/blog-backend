@@ -47,11 +47,11 @@ func (u *PasswordResetUsecase) RequestReset(email string) error {
 	existingToken, err := u.PasswordResetRepo.FindByEmail(context.Background(), user.Email)
 	if err == nil && existingToken != nil {
 		if !existingToken.Used && existingToken.ExpiresAt.After(time.Now()) {
-			return errors.New("a reset token has already been requested. Please wait until it expires or use the existing token.")
+			return errors.New("a reset token has already been requested. Please wait until it expires or use the existing token")
 		}
 		if existingToken.RateLimit >= 5 {
 			if time.Since(existingToken.CreatedAt) < 24*time.Hour {
-				return errors.New("rate limit exceeded. You can only request up to 5 password resets in a day.")
+				return errors.New("rate limit exceeded. You can only request up to 5 password resets in a day")
 			}
 			existingToken.RateLimit = 0
 		}
