@@ -58,13 +58,6 @@ func (b *blogAIUsecase) GetGeneratedContentByID(ctx context.Context, id string) 
 	return b.blogAIRepo.GetGeneratedContentByID(c, id)
 }
 
-func (b *blogAIUsecase) GetUserPromptHistory(ctx context.Context, userID string) ([]domain.BlogAIPrompt, *domain.DomainError) {
-	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
-	defer cancel()
-
-	return b.blogAIRepo.GetPromptsByUserID(c, userID)
-}
-
 func (b *blogAIUsecase) SubmitFeedback(ctx context.Context, feedback domain.BlogAIFeedback) *domain.DomainError {
 	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
 	defer cancel()

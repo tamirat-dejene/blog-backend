@@ -16,11 +16,6 @@ func (b *blogAIRepository) GetGeneratedContentByID(ctx context.Context, id strin
 	panic("unimplemented")
 }
 
-// GetPromptsByUserID implements domain.BlogAIRepository.
-func (b *blogAIRepository) GetPromptsByUserID(ctx context.Context, userID string) ([]domain.BlogAIPrompt, *domain.DomainError) {
-	panic("unimplemented")
-}
-
 // SaveFeedback implements domain.BlogAIRepository.
 func (b *blogAIRepository) SaveFeedback(ctx context.Context, feedback domain.BlogAIFeedback) *domain.DomainError {
 	panic("unimplemented")

@@ -33,7 +33,6 @@ func NewBlogAIRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Database
 	{
 		ai.POST("/generate", blog_ai_controller.GenerateBlogContent)     // Generate blog content from keywords
 		ai.GET("/generate/:id", blog_ai_controller.GetGeneratedContent)  // Fetch a specific AI-generated result
-		ai.GET("/keywords/history", blog_ai_controller.GetPromptHistory) // List previous user prompts
 		ai.POST("/feedback", blog_ai_controller.SubmitFeedback)          // Submit feedback on generated content
 	}
 }

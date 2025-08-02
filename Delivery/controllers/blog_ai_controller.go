@@ -90,30 +90,6 @@ func (b *BlogAIController) GetGeneratedContent(ctx *gin.Context) {
 	ctx.JSON(200, resp)
 }
 
-func (b *BlogAIController) GetPromptHistory(ctx *gin.Context) {
-	userID, ok := ctx.Get("user_id")
-	if !ok || userID == nil {
-		ctx.JSON(401, domain.ErrorResponse{
-			Message: "Unauthorized",
-			Error:   "User ID not found",
-			Code:    401,
-		})
-		return
-	}
-
-	prompts, err := b.BlogAIUsecase.GetUserPromptHistory(ctx.Request.Context(), userID.(string))
-	if err != nil {
-		ctx.JSON(err.Code, domain.ErrorResponse{
-			Message: "Error fetching prompt history",
-			Error:   err.Err.Error(),
-			Code:    err.Code,
-		})
-		return
-	}
-
-	ctx.JSON(200, prompts)
-}
-
 func (b *BlogAIController) SubmitFeedback(ctx *gin.Context) {
 	var req dto.BlogAIFeedbackRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
