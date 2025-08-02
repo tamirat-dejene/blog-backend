@@ -1,7 +1,7 @@
 package mapper
 
 import (
-	"g6/blog-api/Domain"
+	domain "g6/blog-api/Domain"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -14,7 +14,10 @@ type BlogAIContentModel struct {
 	UserID          primitive.ObjectID `bson:"user_id"`
 	Topic           string             `bson:"topic"`
 	Keywords        []string           `bson:"keywords"`
-	GeneratedText   string             `bson:"generated_text"`
+	Title           string             `bson:"title"`
+	Introduction    string             `bson:"introduction"`
+	Body            string             `bson:"body"`
+	Conclusion      string             `bson:"conclusion"`
 	SuggestedTitles []string           `bson:"suggested_titles"`
 	RelatedIdeas    []string           `bson:"related_ideas"`
 	CreatedAt       primitive.DateTime `bson:"created_at"`
@@ -37,7 +40,10 @@ func BlogAIContentToDomain(content *BlogAIContentModel) *domain.BlogAIContent {
 		UserID:          content.UserID.Hex(),
 		Topic:           content.Topic,
 		Keywords:        content.Keywords,
-		GeneratedText:   content.GeneratedText,
+		Title:           content.Title,
+		Introduction:    content.Introduction,
+		Body:            content.Body,
+		Conclusion:      content.Conclusion,
 		SuggestedTitles: content.SuggestedTitles,
 		RelatedIdeas:    content.RelatedIdeas,
 		CreatedAt:       content.CreatedAt.Time().Format(time.RFC3339),
@@ -68,7 +74,10 @@ func BlogAIContentFromDomain(content *domain.BlogAIContent) (*BlogAIContentModel
 		UserID:          userID,
 		Topic:           content.Topic,
 		Keywords:        content.Keywords,
-		GeneratedText:   content.GeneratedText,
+		Title:           content.Title,
+		Introduction:    content.Introduction,
+		Body:            content.Body,
+		Conclusion:      content.Conclusion,
 		SuggestedTitles: content.SuggestedTitles,
 		RelatedIdeas:    content.RelatedIdeas,
 		CreatedAt:       primitive.NewDateTimeFromTime(createdAtTime),

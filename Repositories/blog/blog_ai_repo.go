@@ -27,7 +27,7 @@ func (b *blogAIRepository) SaveFeedback(ctx context.Context, feedback domain.Blo
 }
 
 // StoreGeneratedContent implements domain.BlogAIRepository.
-func (b *blogAIRepository) StoreGeneratedContent(ctx context.Context, content *domain.BlogAIContent) *domain.DomainError {
+func (b *blogAIRepository) StoreGeneratedContent(ctx context.Context, content *domain.BlogAIContent) (*domain.BlogAIContent, *domain.DomainError) {
 	panic("unimplemented")
 }
 

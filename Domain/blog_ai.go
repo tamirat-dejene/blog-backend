@@ -15,7 +15,10 @@ type BlogAIContent struct {
 	UserID          string
 	Topic           string
 	Keywords        []string
-	GeneratedText   string
+	Title           string
+	Introduction    string
+	Body            string
+	Conclusion      string
 	SuggestedTitles []string
 	RelatedIdeas    []string
 	CreatedAt       string
@@ -43,7 +46,7 @@ type BlogAIUsecase interface {
 }
 
 type BlogAIRepository interface {
-	StoreGeneratedContent(ctx context.Context, content *BlogAIContent) *DomainError
+	StoreGeneratedContent(ctx context.Context, content *BlogAIContent) (*BlogAIContent, *DomainError)
 	GetGeneratedContentByID(ctx context.Context, id string) (*BlogAIContent, *DomainError)
 	GetPromptsByUserID(ctx context.Context, userID string) ([]BlogAIPrompt, *DomainError)
 	SaveFeedback(ctx context.Context, feedback BlogAIFeedback) *DomainError

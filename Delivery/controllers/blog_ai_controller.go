@@ -50,17 +50,7 @@ func (b *BlogAIController) GenerateBlogContent(ctx *gin.Context) {
 		return
 	}
 
-	resp, err1 := mapper.BlogAIContentFromDomain(content)
-	if err1 != nil {
-		ctx.JSON(500, domain.ErrorResponse{
-			Message: "Failed to map generated content.",
-			Error:   err1.Error(),
-			Code:    500,
-		})
-		return
-	}
-
-	ctx.JSON(200, resp)
+	ctx.JSON(200, dto.BlogAIContentFromDomain(content))
 }
 
 func (b *BlogAIController) GetGeneratedContent(ctx *gin.Context) {
