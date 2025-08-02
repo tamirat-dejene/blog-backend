@@ -69,7 +69,6 @@ func (b *blogCommentRepository) GetCommentByID(ctx context.Context, id string) (
 
 // GetCommentsByBlogID implements domain.BlogCommentRepository.
 func (b *blogCommentRepository) GetCommentsByBlogID(ctx context.Context, blogID string, limit int) ([]domain.BlogComment, *domain.DomainError) {
-	fmt.Println("Fetching comments for blog ID:", blogID, b.collections.BlogPosts)
 	// 1. Validate if the blog exists
 	oid, err := primitive.ObjectIDFromHex(blogID)
 	if err != nil {

@@ -83,3 +83,47 @@ func BlogAIContentFromDomain(content *domain.BlogAIContent) (*BlogAIContentModel
 		CreatedAt:       primitive.NewDateTimeFromTime(createdAtTime),
 	}, nil
 }
+
+func BlogAIFeedbackToDomain(feedback *BlogAIFeedbackModel) *domain.BlogAIFeedback {
+	return &domain.BlogAIFeedback{
+		ID:        feedback.ID.Hex(),
+		UserID:    feedback.UserID.Hex(),
+		ContentID: feedback.ContentID.Hex(),
+		Rating:    feedback.Rating,
+		Feedback:  feedback.Feedback,
+		CreatedAt: feedback.CreatedAt.Time().Format(time.RFC3339),
+	}
+}
+func BlogAIFeedbackFromDomain(feedback *domain.BlogAIFeedback) (*BlogAIFeedbackModel, error) {
+	userID, err := primitive.ObjectIDFromHex(feedback.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	contentID, err := primitive.ObjectIDFromHex(feedback.ContentID)
+	if err != nil {
+		return nil, err
+	}
+
+	objectID := primitive.NewObjectID()
+	if feedback.ID != "" {
+		objectID, err = primitive.ObjectIDFromHex(feedback.ID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	createdAtTime, err := time.Parse(time.RFC3339, feedback.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return &BlogAIFeedbackModel{
+		ID:        objectID,
+		UserID:    userID,
+		ContentID: contentID,
+		Rating:    feedback.Rating,
+		Feedback:  feedback.Feedback,
+		CreatedAt: primitive.NewDateTimeFromTime(createdAtTime),
+	}, nil
+}

@@ -13,6 +13,7 @@ type Collections struct {
 	PasswordReset string
 
 	AIBlogPosts string
+	AIBlogPostsFeedback string
 }
 
 // func NewCollections(blogPosts, blogComments, blogUserReactions string) *collections {

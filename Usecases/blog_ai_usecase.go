@@ -58,11 +58,19 @@ func (b *blogAIUsecase) GetGeneratedContentByID(ctx context.Context, id string) 
 	return b.blogAIRepo.GetGeneratedContentByID(c, id)
 }
 
-func (b *blogAIUsecase) SubmitFeedback(ctx context.Context, feedback domain.BlogAIFeedback) *domain.DomainError {
+func (b *blogAIUsecase) SubmitFeedback(ctx context.Context, feedback domain.BlogAIFeedback) (*domain.BlogAIFeedback, *domain.DomainError) {
 	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
 	defer cancel()
 
-	return b.blogAIRepo.SaveFeedback(c, feedback)
+	feedback1, err := b.blogAIRepo.SaveFeedback(c, feedback)
+	if err != nil {
+		return nil, &domain.DomainError{
+			Err:  err.Err,
+			Code: 500,
+		}
+	}
+
+	return feedback1, nil
 }
 
 func NewBlogAIUsecase(blogAIRepo domain.BlogAIRepository, geminiConfig ai.GeminiConfig, timeout time.Duration) domain.BlogAIUsecase {
