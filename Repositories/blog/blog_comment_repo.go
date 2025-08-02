@@ -14,7 +14,7 @@ import (
 
 type blogCommentRepository struct {
 	db          mongo.Database
-	collections *Collections
+	collections *mongo.Collections
 }
 
 func (b *blogCommentRepository) Create(ctx context.Context, comment domain.BlogComment) (*domain.BlogComment, error) {
@@ -129,7 +129,7 @@ func (b *blogCommentRepository) GetCommentsByBlogID(ctx context.Context, blogID 
 func (b *blogCommentRepository) Update(ctx context.Context, id string, comment domain.BlogComment) (*domain.BlogComment, error) {
 	panic("unimplemented")
 }
-func NewBlogCommentRepository(db mongo.Database, collections *Collections) domain.BlogCommentRepository {
+func NewBlogCommentRepository(db mongo.Database, collections *mongo.Collections) domain.BlogCommentRepository {
 	return &blogCommentRepository{
 		db:          db,
 		collections: collections,
