@@ -29,6 +29,14 @@ type BlogAIFeedbackRequest struct {
 	Feedback  string `json:"feedback" binding:"required"`
 }
 
+type BlogAIFeedbackResponse struct {
+	ID        string `json:"id"`
+	UserID    string `json:"user_id"`
+	ContentID string `json:"content_id"`
+	Rating    int    `json:"rating"`
+	Feedback  string `json:"feedback"`
+}
+
 func BlogAIContentToDomain(content *BlogAIResponseDTO, userID string, createdAtTime time.Time) *domain.BlogAIContent {
 	return &domain.BlogAIContent{
 		ID:              content.ID,
@@ -57,5 +65,24 @@ func BlogAIContentFromDomain(content *domain.BlogAIContent) *BlogAIResponseDTO {
 		SuggestedTitles: content.SuggestedTitles,
 		RelatedIdeas:    content.RelatedIdeas,
 		CreatedAt:       content.CreatedAt,
+	}
+}
+
+func BlogAIFeedbackFromDomain(feedback *domain.BlogAIFeedback) *BlogAIFeedbackResponse {
+	return &BlogAIFeedbackResponse{
+		ID:        feedback.ID,
+		UserID:    feedback.UserID,
+		ContentID: feedback.ContentID,
+		Rating:    feedback.Rating,
+		Feedback:  feedback.Feedback,
+	}
+}
+
+func BlogAIFeedbackToDomain(feedback *BlogAIFeedbackRequest, userID string) *domain.BlogAIFeedback {
+	return &domain.BlogAIFeedback{
+		UserID:    userID,
+		ContentID: feedback.ContentID,
+		Rating:    feedback.Rating,
+		Feedback:  feedback.Feedback,
 	}
 }

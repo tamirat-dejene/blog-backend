@@ -111,7 +111,7 @@ func (b *BlogAIController) SubmitFeedback(ctx *gin.Context) {
 		return
 	}
 
-	err := b.BlogAIUsecase.SubmitFeedback(ctx, domain.BlogAIFeedback{
+	feedback, err := b.BlogAIUsecase.SubmitFeedback(ctx, domain.BlogAIFeedback{
 		ContentID: req.ContentID,
 		UserID:    user_id.(string),
 		Rating:    req.Rating,
@@ -127,7 +127,5 @@ func (b *BlogAIController) SubmitFeedback(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(200, gin.H{
-		"message": "Feedback submitted successfully",
-	})
+	ctx.JSON(200, dto.BlogAIFeedbackFromDomain(feedback))
 }
