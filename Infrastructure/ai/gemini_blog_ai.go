@@ -45,7 +45,7 @@ Then at the end, provide:
 - 3 suggested alternative titles
 - 3 related blog post ideas
 
-Return your response **strictly in the following JSON format**:
+Return your response **strictly in the following JSON format** and **don't use markdown or any other formatting, just plain JSON**:
 
 {
   "title": "...",
@@ -72,6 +72,16 @@ Return your response **strictly in the following JSON format**:
 }
 
 func (c *GeminiConfig) ParseGeneratedContent(content string, output *dto.AIBlogPostResponse) error {
+	// Remove ```json``` and ``` at the start and end of the content.
+	content = strings.TrimPrefix(content, "```json")
+	content = strings.TrimSuffix(content, "```")
+	content = strings.TrimSpace(content)
+	
+	// Ensure the content is valid JSON.
+	if !strings.HasPrefix(content, "{") || !strings.HasSuffix(content, "}") {
+		return fmt.Errorf("generated content is not valid JSON")
+	}
+
 	// Parse the JSON content into the output structure.
 	if err := json.Unmarshal([]byte(content), output); err != nil {
 		return fmt.Errorf("failed to parse generated content: %w", err)
