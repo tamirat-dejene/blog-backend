@@ -51,6 +51,11 @@ type Env struct {
 	// Gemini AI configuration
 	GeminiAPIKey    string `mapstructure:"GEMINI_API_KEY"`
 	GeminiModelName string `mapstructure:"GEMINI_MODEL_NAME"`
+
+	// AI Blog Post Collection
+	AIBlogPostsCollection string `mapstructure:"AI_BLOG_POSTS_COLLECTION"`
+	// AI Blog Post Feedback Collection
+	AIBlogPostsFeedbackCollection string `mapstructure:"AI_BLOG_POSTS_FEEDBACK_COLLECTION"`
 }
 
 // Viper can be made injectable
