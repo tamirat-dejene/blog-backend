@@ -14,11 +14,11 @@ import (
 func NewBlogAIRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Database) {
 	blog_ai_controller := controllers.BlogAIController{
 		BlogAIUsecase: usecases.NewBlogAIUsecase(
-			repository.NewBlogAIRepository(db, repository.NewCollections(
-				env.BlogPostCollection,
-				env.BlogCommentCollection,
-				env.BlogUserReactionCollection,
-			)),
+			repository.NewBlogAIRepository(db, &repository.Collections{
+				BlogPosts:         env.BlogPostCollection,
+				BlogComments:      env.BlogCommentCollection,
+				BlogUserReactions: env.BlogUserReactionCollection,
+			}),
 			time.Duration(env.CtxTSeconds)*time.Second,
 		),
 		Env: env,

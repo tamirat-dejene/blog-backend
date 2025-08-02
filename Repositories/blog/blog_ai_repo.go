@@ -8,7 +8,7 @@ import (
 
 type blogAIRepository struct {
 	db          mongo.Database
-	collections *collections
+	collections *Collections
 }
 
 // GetGeneratedContentByID implements domain.BlogAIRepository.
@@ -31,7 +31,7 @@ func (b *blogAIRepository) StoreGeneratedContent(ctx context.Context, content *d
 	panic("unimplemented")
 }
 
-func NewBlogAIRepository(db mongo.Database, collections *collections) domain.BlogAIRepository {
+func NewBlogAIRepository(db mongo.Database, collections *Collections) domain.BlogAIRepository {
 	return &blogAIRepository{
 		db:          db,
 		collections: collections,
