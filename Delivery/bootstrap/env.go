@@ -47,6 +47,10 @@ type Env struct {
 	SMTPUsername string `mapstructure:"SMTP_USERNAME"`
 	SMTPPassword string `mapstructure:"SMTP_PASSWORD"` // App Password for Gmail
 	ResetURL     string `mapstructure:"RESET_URL"`
+
+	// Gemini AI configuration
+	GeminiAPIKey    string `mapstructure:"GEMINI_API_KEY"`
+	GeminiModelName string `mapstructure:"GEMINI_MODEL_NAME"`
 }
 
 // Viper can be made injectable

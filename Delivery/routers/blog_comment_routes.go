@@ -16,11 +16,11 @@ func NewBlogCommentRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Dat
 		BlogCommentUsecase: usecases.NewBlogCommentUsecase(
 			repository.NewBlogCommentRepository(
 				db,
-				repository.NewCollections(
-					env.BlogPostCollection,
-					env.BlogCommentCollection,
-					env.BlogUserReactionCollection,
-				),
+				&mongo.Collections{
+					BlogPosts:         env.BlogPostCollection,
+					BlogComments:      env.BlogCommentCollection,
+					BlogUserReactions: env.BlogUserReactionCollection,
+				},
 			),
 			time.Duration(env.CtxTSeconds) * time.Second,
 		),

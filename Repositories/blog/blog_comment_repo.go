@@ -14,7 +14,7 @@ import (
 
 type blogCommentRepository struct {
 	db          mongo.Database
-	collections *collections
+	collections *mongo.Collections
 }
 
 func (b *blogCommentRepository) Create(ctx context.Context, comment domain.BlogComment) (*domain.BlogComment, error) {
@@ -69,7 +69,6 @@ func (b *blogCommentRepository) GetCommentByID(ctx context.Context, id string) (
 
 // GetCommentsByBlogID implements domain.BlogCommentRepository.
 func (b *blogCommentRepository) GetCommentsByBlogID(ctx context.Context, blogID string, limit int) ([]domain.BlogComment, *domain.DomainError) {
-	fmt.Println("Fetching comments for blog ID:", blogID, b.collections.BlogPosts)
 	// 1. Validate if the blog exists
 	oid, err := primitive.ObjectIDFromHex(blogID)
 	if err != nil {
@@ -129,7 +128,7 @@ func (b *blogCommentRepository) GetCommentsByBlogID(ctx context.Context, blogID 
 func (b *blogCommentRepository) Update(ctx context.Context, id string, comment domain.BlogComment) (*domain.BlogComment, error) {
 	panic("unimplemented")
 }
-func NewBlogCommentRepository(db mongo.Database, collections *collections) domain.BlogCommentRepository {
+func NewBlogCommentRepository(db mongo.Database, collections *mongo.Collections) domain.BlogCommentRepository {
 	return &blogCommentRepository{
 		db:          db,
 		collections: collections,
