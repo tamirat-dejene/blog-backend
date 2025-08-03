@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"g6/blog-api/Delivery/bootstrap"
 	"g6/blog-api/Delivery/dto"
 	domain "g6/blog-api/Domain"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 
 type BlogReactionController struct {
 	BlogUserReactionUsecase domain.BlogUserReactionUsecase
+	Env                     *bootstrap.Env
 }
 
 func (b *BlogReactionController) CreateReaction(ctx *gin.Context) {
@@ -40,11 +42,14 @@ func (b *BlogReactionController) DeleteReaction(ctx *gin.Context) {
 }
 
 func (b *BlogReactionController) GetUserReaction(ctx *gin.Context) {
-	//GET("/blogs/:blog_id/users/:user_id/reaction"
-	blogId := ctx.Param("blog_id")
-	userId := ctx.Param("user_id")
+	var query dto.ReactionQuery
 
-	reaction, err := b.BlogUserReactionUsecase.GetUserReaction(ctx, blogId, userId)
+	if err := ctx.ShouldBindQuery(&query); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	reaction, err := b.BlogUserReactionUsecase.GetUserReaction(ctx, query.BlogId, query.UserId)
 
 	if err != nil {
 		if err.Error() == "no reaction found" {

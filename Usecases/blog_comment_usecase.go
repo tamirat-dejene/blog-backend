@@ -58,7 +58,16 @@ func (b *blogCommentUsecase) GetCommentsByBlogID(ctx context.Context, blogID str
 
 // UpdateComment implements domain.BlogCommentUsecase.
 func (b *blogCommentUsecase) UpdateComment(ctx context.Context, id string, comment domain.BlogComment) (*domain.BlogComment, error) {
-	panic("unimplemented")
+	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
+	defer cancel()
+
+	updatedComment, err := b.commentRepo.Update(c, id, comment)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedComment, nil
 }
 
 func NewBlogCommentUsecase(commentRepo domain.BlogCommentRepository, timeout time.Duration) domain.BlogCommentUsecase {

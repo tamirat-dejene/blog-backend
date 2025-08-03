@@ -42,6 +42,26 @@ type BlogUserReactionResponse struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+type BlogCommentRequest struct {
+	ID       string `json:"id"`
+	BlogID   string `json:"blog_id"`
+	AuthorID string `json:"author_id"`
+	Comment  string `json:"comment"`
+}
+
+type BlogCommentResponse struct {
+	ID        string    `json:"id"`
+	BlogID    string    `json:"blog_id"`
+	AuthorID  string    `json:"author_id"`
+	Comment   string    `json:"comment"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type ReactionQuery struct {
+	BlogId string `form:"blog_id" binding:"required"`
+	UserId string `form:"user_id" binding:"required"`
+}
+
 func ToDomainBlogPost(req BlogPostRequest) domain.BlogPost {
 	return domain.BlogPost{
 		Title:           req.Title,
@@ -91,5 +111,24 @@ func FromDomainBlogReaction(response domain.BlogUserReaction) BlogUserReactionRe
 		UserID:    response.UserID,
 		CreatedAt: response.CreatedAt,
 		IsLike:    response.IsLike,
+	}
+}
+
+func ToDomainBlogComment(req BlogCommentRequest) domain.BlogComment {
+	return domain.BlogComment{
+		ID:       req.ID,
+		BlogID:   req.BlogID,
+		AuthorID: req.AuthorID,
+		Comment:  req.Comment,
+	}
+}
+
+func FromDomainBlogComment(response domain.BlogComment) BlogCommentResponse {
+	return BlogCommentResponse{
+		ID:        response.ID,
+		BlogID:    response.BlogID,
+		AuthorID:  response.AuthorID,
+		Comment:   response.Comment,
+		CreatedAt: response.CreatedAt,
 	}
 }
