@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	dto "g6/blog-api/Delivery/dto"
 	domain "g6/blog-api/Domain"
 	"g6/blog-api/Infrastructure/security"
@@ -227,22 +228,28 @@ func (ac *AuthController) LogoutRequest(c *gin.Context) {
 
 	// get the refresh token from cookies
 	refreshToken, err := utils.GetCookie(c, "refresh_token")
+	utils.DeleteCookie(c, "refresh_token")
+	utils.DeleteCookie(c, "access_token")
+
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not logged in or your session has expired"})
 		return
 	}
+	fmt.Println("Part 1")
 
 	tokenDoc, err := ac.RefreshTokenUsecase.FindByToken(refreshToken)
 	if err != nil || tokenDoc == nil || tokenDoc.Revoked || time.Now().After(tokenDoc.ExpiresAt) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not logged in or your session has expired"})
 		return
 	}
-
+	fmt.Println("Part 2")
 	// revoke the token
 	if err := ac.RefreshTokenUsecase.RevokedToken(tokenDoc); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to revoke token"})
 		return
 	}
+	fmt.Println("Part 3")
+
 	// delete the token from the database
 	if err := ac.RefreshTokenUsecase.DeleteByUserID(tokenDoc.UserID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete token"})

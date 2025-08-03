@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"time"
 
 	"g6/blog-api/Delivery/bootstrap"
 	domain "g6/blog-api/Domain"
@@ -31,7 +32,14 @@ func AuthMiddleware(env bootstrap.Env) gin.HandlerFunc {
 			return
 		}
 		claims := token.Claims.(jwt.MapClaims)
-		c.Set("user_id", claims["userId"].(string))
+		// check if the token has not expired
+		if exp, ok := claims["exp"].(float64); !ok || exp < float64(time.Now().Unix()) {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "token expired"})
+			return
+		}
+
+		// Set user ID and role in the context for further use
+		c.Set("user_id", claims["sub"].(string))
 		if role, ok := claims["role"]; ok {
 			c.Set("role", role.(string))
 		}
