@@ -12,6 +12,7 @@ require (
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
+	github.com/creasty/defaults v1.6.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
@@ -56,6 +57,7 @@ require (
 	google.golang.org/grpc v1.67.3 // indirect
 	google.golang.org/protobuf v1.36.1 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
+	gopkg.in/validator.v2 v2.0.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
@@ -64,6 +66,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/golang/snappy v1.0.0 // indirect
 	github.com/google/uuid v1.6.0
+	github.com/imagekit-developer/imagekit-go v0.0.0-20240521071536-1d7e6e67fcd7
 	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/spf13/viper v1.20.1
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect

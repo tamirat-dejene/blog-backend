@@ -3,6 +3,7 @@ package usecases
 import (
 	"context"
 	"errors"
+	"fmt"
 	"g6/blog-api/Delivery/dto"
 	domain "g6/blog-api/Domain"
 	"g6/blog-api/Infrastructure/ai"
@@ -16,12 +17,13 @@ type blogAIUsecase struct {
 
 // GeneratePost implements domain.AIBlogPostUsecase.
 func (b *blogAIUsecase) GeneratePost(ctx context.Context, req domain.AIBlogPostGenerate) (*domain.AIBlogPost, *domain.DomainError) {
-	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
+	c, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
 	// Generate content using the AI service.
 	content, err := b.geminiConfig.GenerateWithGemini(c, req.Topic, req.Keywords)
 	if err != nil {
+		fmt.Println("Error generating content:", err)
 		return nil, &domain.DomainError{
 			Err:  errors.New("failed to generate content"),
 			Code: 500,

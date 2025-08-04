@@ -48,53 +48,60 @@ func (ac *AuthController) LoginRequest(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Username/email and password are required"})
 		return
 	}
-	// check if user is really exist
+
+	// Check if user exists
 	user, err := ac.UserUsecase.FindByUsernameOrEmail(c.Request.Context(), loginRequest.Identifier)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
-		return
-	}
-
-	// validate the password
-	err = security.ValidatePassword(user.Password, loginRequest.Password)
-	if err != nil {
+		// Use generic error message for both user not found and password mismatch
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
 		return
 	}
 
-	// if every thing is fine generate access and refresh token
+	// Validate the password
+	if err := security.ValidatePassword(user.Password, loginRequest.Password); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+		return
+	}
+
+	// Generate access and refresh tokens
 	response, err := ac.AuthService.GenerateTokens(*user)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
 	}
 
-	// Save the refresh token in the database
+	// Prepare refresh token for DB
 	refreshToken := &domain.RefreshToken{
 		Token:     response.RefreshToken,
 		UserID:    user.ID,
 		Revoked:   false,
-		ExpiresAt: response.ExpiresAt,
+		ExpiresAt: response.RefreshTokenExpiresAt,
 		CreatedAt: time.Now(),
 	}
 
-	// Check if the user have token on db
-	existingToken, _ := ac.RefreshTokenUsecase.FindByUserID(user.ID)
+	// Check if the user already has a refresh token in DB
+	existingToken, findErr := ac.RefreshTokenUsecase.FindByUserID(user.ID)
+	if findErr != nil && findErr.Error() != "refresh token not found" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check existing refresh token"})
+		return
+	}
+	if findErr != nil && findErr.Error() == "refresh token not found" {
+		existingToken = nil // Explicitly set to nil if no token is found
+	}
+
 	if existingToken != nil {
-		// refresh token shouldn't used twice so we have to make revoke true
-		err := ac.RefreshTokenUsecase.RevokedToken(existingToken)
-		if err != nil {
+		// Revoke the old token
+		if err := ac.RefreshTokenUsecase.RevokedToken(existingToken); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to revoke existing refresh token"})
 			return
 		}
-		// if that so just replace it instead of creating new one
-		err = ac.RefreshTokenUsecase.ReplaceToken(refreshToken)
-		if err != nil {
+		// Replace with the new token
+		if err := ac.RefreshTokenUsecase.ReplaceToken(refreshToken); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update existing refresh token"})
 			return
 		}
 	} else {
-		// Save the refresh token using the usecase
+		// Save the new refresh token
 		if err := ac.RefreshTokenUsecase.Save(refreshToken); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save refresh token"})
 			return
@@ -105,7 +112,7 @@ func (ac *AuthController) LoginRequest(c *gin.Context) {
 	utils.SetCookie(c, utils.CookieOptions{
 		Name:     "refresh_token",
 		Value:    response.RefreshToken,
-		MaxAge:   int(time.Until(response.ExpiresAt).Seconds()),
+		MaxAge:   int(time.Until(response.RefreshTokenExpiresAt).Seconds()),
 		Path:     "/",
 		Domain:   "",
 		Secure:   false,
@@ -116,7 +123,7 @@ func (ac *AuthController) LoginRequest(c *gin.Context) {
 	utils.SetCookie(c, utils.CookieOptions{
 		Name:     "access_token",
 		Value:    response.AccessToken,
-		MaxAge:   int(time.Until(response.ExpiresAt).Seconds()),
+		MaxAge:   int(time.Until(response.AccessTokenExpiresAt).Seconds()),
 		Path:     "/",
 		Domain:   "",
 		Secure:   false,
@@ -130,7 +137,6 @@ func (ac *AuthController) LoginRequest(c *gin.Context) {
 	})
 }
 
-// Refresh token
 func (ac *AuthController) RefreshToken(c *gin.Context) {
 	var req dto.RefreshTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -154,11 +160,7 @@ func (ac *AuthController) RefreshToken(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "No refresh token found in cookies, please login again"})
 		return
 	}
-	// revoked the token on db
-	if err := ac.RefreshTokenUsecase.RevokedToken(tokenDoc); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to revoke token"})
-		return
-	}
+
 	// Validate the refresh token
 	_, err = ac.AuthService.ValidateRefreshToken(req.RefreshToken)
 	if err != nil {
@@ -173,26 +175,51 @@ func (ac *AuthController) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	// generate new token
+	// generate new access token
 	response, err := ac.AuthService.GenerateTokens(*user)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create token"})
 		return
 	}
-	// Save the refresh token in the database
-	refreshToken := &domain.RefreshToken{
-		Token:     response.RefreshToken,
-		UserID:    user.ID,
-		Revoked:   false,
-		ExpiresAt: response.ExpiresAt,
-		CreatedAt: time.Now(),
+
+	// Decide whether to rotate the refresh token
+	rotateThreshold := 2 * time.Hour // 2 hours before expiry
+	shouldRotate := time.Until(tokenDoc.ExpiresAt) < rotateThreshold
+
+	var refreshTokenValue string
+	var refreshTokenExpiry time.Time
+
+	if shouldRotate {
+		// Rotate: generate and store a new refresh token
+		refreshToken := &domain.RefreshToken{
+			Token:     response.RefreshToken,
+			UserID:    user.ID,
+			Revoked:   false,
+			ExpiresAt: response.RefreshTokenExpiresAt,
+			CreatedAt: time.Now(),
+		}
+		if err := ac.RefreshTokenUsecase.RevokedToken(tokenDoc); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to revoke old refresh token"})
+			return
+
+		}
+		if err := ac.RefreshTokenUsecase.ReplaceToken(refreshToken); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update refresh token"})
+			return
+		}
+		refreshTokenValue = response.RefreshToken
+		refreshTokenExpiry = response.RefreshTokenExpiresAt
+	} else {
+		// Do not rotate: keep the old refresh token
+		refreshTokenValue = tokenDoc.Token
+		refreshTokenExpiry = tokenDoc.ExpiresAt
 	}
 
 	// Set the refresh token in the cookies
 	utils.SetCookie(c, utils.CookieOptions{
 		Name:     "refresh_token",
-		Value:    response.RefreshToken,
-		MaxAge:   int(time.Until(response.ExpiresAt).Seconds()),
+		Value:    refreshTokenValue,
+		MaxAge:   int(time.Until(refreshTokenExpiry).Seconds()),
 		Path:     "/",
 		Domain:   "",
 		Secure:   false,
@@ -203,7 +230,7 @@ func (ac *AuthController) RefreshToken(c *gin.Context) {
 	utils.SetCookie(c, utils.CookieOptions{
 		Name:     "access_token",
 		Value:    response.AccessToken,
-		MaxAge:   int(time.Until(response.ExpiresAt).Seconds()),
+		MaxAge:   int(time.Until(response.AccessTokenExpiresAt).Seconds()),
 		Path:     "/",
 		Domain:   "",
 		Secure:   false,
@@ -211,14 +238,9 @@ func (ac *AuthController) RefreshToken(c *gin.Context) {
 		SameSite: http.SameSiteStrictMode,
 	})
 
-	// Optional update the existing refresh token
-	if err := ac.RefreshTokenUsecase.ReplaceToken(refreshToken); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update refresh token"})
-		return
-	}
 	c.JSON(http.StatusOK, dto.LoginResponse{
 		AccessToken:  response.AccessToken,
-		RefreshToken: response.RefreshToken,
+		RefreshToken: refreshTokenValue,
 	})
 }
 
@@ -227,6 +249,9 @@ func (ac *AuthController) LogoutRequest(c *gin.Context) {
 
 	// get the refresh token from cookies
 	refreshToken, err := utils.GetCookie(c, "refresh_token")
+	utils.DeleteCookie(c, "refresh_token")
+	utils.DeleteCookie(c, "access_token")
+
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not logged in or your session has expired"})
 		return
@@ -237,12 +262,12 @@ func (ac *AuthController) LogoutRequest(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not logged in or your session has expired"})
 		return
 	}
-
 	// revoke the token
 	if err := ac.RefreshTokenUsecase.RevokedToken(tokenDoc); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to revoke token"})
 		return
 	}
+
 	// delete the token from the database
 	if err := ac.RefreshTokenUsecase.DeleteByUserID(tokenDoc.UserID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete token"})
@@ -275,6 +300,7 @@ func (ac *AuthController) ChangeRoleRequest(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "User role changed successfully"})
 }
+
 // forget password here
 func (ac *AuthController) ForgotPasswordRequest(c *gin.Context) {
 
@@ -319,5 +345,3 @@ func (ac *AuthController) ResetPasswordRequest(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Password reset successfully"})
 }
-
-

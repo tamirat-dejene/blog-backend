@@ -3,6 +3,7 @@ package usecases
 import (
 	"context"
 	"errors"
+	"fmt"
 	domain "g6/blog-api/Domain"
 	"g6/blog-api/Infrastructure/security"
 	"regexp"
@@ -10,14 +11,16 @@ import (
 )
 
 type UserUsecase struct {
-	userRepo   domain.IUserRepository
-	ctxtimeout time.Duration
+	userRepo       domain.IUserRepository
+	storageService domain.StorageService
+	ctxtimeout     time.Duration
 }
 
-func NewUserUsecase(userRepo domain.IUserRepository, timeout time.Duration) domain.IUserUsecase {
+func NewUserUsecase(userRepo domain.IUserRepository, storageService domain.StorageService, timeout time.Duration) domain.IUserUsecase {
 	return &UserUsecase{
-		userRepo:   userRepo,
-		ctxtimeout: timeout,
+		userRepo:       userRepo,
+		storageService: storageService,
+		ctxtimeout:     timeout,
 	}
 }
 
@@ -127,5 +130,56 @@ func (uc *UserUsecase) UpdateUser(id string, user *domain.User) (*domain.User, e
 	if err := uc.userRepo.UpdateUser(ctx, id, user); err != nil {
 		return nil, err
 	}
+	return user, nil
+}
+
+func (uc *UserUsecase) UpdateProfile(userID string, update domain.UserProfileUpdate, fileName string) (*domain.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Get user
+	user, err := uc.userRepo.FindUserByID(ctx, userID)
+	if err == domain.ErrNotFound {
+		return nil, domain.ErrUserNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(update.FirstName, update.LastName)
+	// Handle avatar upload
+	if len(update.AvatarData) > 0 {
+		avatarURL, err := uc.storageService.UploadFile(ctx, fileName, update.AvatarData)
+		if err != nil {
+			return nil, fmt.Errorf("failed to upload avatar: %w", err)
+		}
+
+		// Wait for the upload to complete
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+			// Continue if no timeout or cancellation
+		}
+
+		user.AvatarURL = avatarURL
+	}
+	fmt.Println(user)
+
+	// Apply updates
+	if update.Bio != "" {
+		user.Bio = update.Bio
+	}
+	if update.FirstName != "" {
+		user.FirstName = update.FirstName
+	}
+	if update.LastName != "" {
+		user.LastName = update.LastName
+	}
+
+	// Update in repository
+	if err := uc.userRepo.UpdateUser(ctx, user.ID, user); err != nil {
+		return nil, err
+	}
+
 	return user, nil
 }

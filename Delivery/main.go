@@ -48,7 +48,7 @@ func main() {
 	routers.Setup(env, timeout, db, router)
 
 	srv := &http.Server{
-		Addr:    ":" + env.Port,
+		Addr:    env.Port,
 		Handler: router.Handler(),
 	}
 	// Start HTTP Server

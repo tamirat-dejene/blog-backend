@@ -3,8 +3,8 @@ package mongo
 import (
 	"context"
 	"fmt"
-	"time"
 	"log"
+	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -82,13 +82,16 @@ func ErrNoDocuments() error {
 // --- Factory ---
 
 func NewClient(uri string) (Client, error) {
+	// 🙏 u can  use your context config instead but the previous one doest works for me due to internet issue.
 	time.Local = time.UTC
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
 	if err != nil {
 		return nil, err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+
 	if err := client.Ping(ctx, readpref.Primary()); err != nil {
 		return nil, fmt.Errorf("failed to ping MongoDB: %w", err)
 	}

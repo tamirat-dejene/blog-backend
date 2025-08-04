@@ -19,9 +19,9 @@ type Env struct {
 	CtxTSeconds  int    `mapstructure:"CONTEXT_TIMEOUT_SECONDS"`
 
 	// blog post defaults
-	Page           int    `mapstructure:"PAGE"`
-	PageSize       int    `mapstructure:"PAGE_SIZE"`
-	Recency        string `mapstructure:"RECENCY"`
+	Page               int    `mapstructure:"PAGE"`
+	PageSize           int    `mapstructure:"PAGE_SIZE"`
+	Recency            string `mapstructure:"RECENCY"`
 	BlogPostCollection string `mapstructure:"BLOG_POST_COLLECTION"`
 
 	// blog comment defaults
@@ -51,6 +51,11 @@ type Env struct {
 	// Gemini AI configuration
 	GeminiAPIKey    string `mapstructure:"GEMINI_API_KEY"`
 	GeminiModelName string `mapstructure:"GEMINI_MODEL_NAME"`
+
+	// Imagekit configuration
+	ImageKitPrivateKey string `mapstructure:"IMAGEKIT_PRIVATE_KEY"`
+	ImageKitPublicKey  string `mapstructure:"IMAGEKIT_PUBLIC_KEY"`
+	ImageKitEndpoint   string `mapstructure:"IMAGEKIT_URL_ENDPOINT"`
 }
 
 // Viper can be made injectable
