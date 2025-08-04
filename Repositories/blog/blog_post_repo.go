@@ -112,12 +112,29 @@ func (b *blogPostRepo) GetBlogByID(ctx context.Context, id string) (*domain.Blog
 
 	var blogModel mapper.BlogPostModel
 	err = b.db.Collection(b.collections.BlogPosts).FindOne(ctx, bson.M{"_id": oid}).Decode(&blogModel)
+	if err == mongo.ErrNoDocuments() {
+		return nil, &domain.DomainError{
+			Err:  err,
+			Code: http.StatusNotFound,
+		}
+	} else if err != nil {
+		return nil, &domain.DomainError{
+			Err:  err,
+			Code: http.StatusInternalServerError,
+		}
+	}
+
+	// Increment the view count
+	_, err = b.db.Collection(b.collections.BlogPosts).UpdateOne(ctx, bson.M{"_id": oid}, bson.M{
+		"$inc": bson.M{"view_count": 1},
+	})
 	if err != nil {
 		return nil, &domain.DomainError{
 			Err:  err,
 			Code: http.StatusInternalServerError,
 		}
 	}
+	blogModel.ViewCount += 1
 
 	// Convert the model to domain
 	if blogModel.ID.IsZero() {
@@ -126,6 +143,19 @@ func (b *blogPostRepo) GetBlogByID(ctx context.Context, id string) (*domain.Blog
 			Code: http.StatusNotFound,
 		}
 	}
+	
+	// Calculate the popularity score
+	ps := utils.CalculatePopularityScore(blogModel.Likes, blogModel.ViewCount, blogModel.CommentCount, blogModel.Dislikes)
+	_, err = b.db.Collection(b.collections.BlogPosts).UpdateOne(ctx, bson.M{"_id": oid}, bson.M{
+		"$set": bson.M{"popularity_score": ps},
+	})
+	if err != nil {
+		return nil, &domain.DomainError{
+			Err:  err,
+			Code: http.StatusInternalServerError,
+		}
+	}
+	blogModel.PopularityScore = int(ps)
 
 	blog := blogModel.ToDomain()
 	if blog == nil {
