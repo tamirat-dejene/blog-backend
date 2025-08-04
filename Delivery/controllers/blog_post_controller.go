@@ -38,12 +38,17 @@ func (b *BlogPostController) parseBlogPostFilter(ctx *gin.Context) *domain.BlogP
 
 	pageInt, _ := strconv.Atoi(page)
 	pageSizeInt, _ := strconv.Atoi(page_size)
+	tgs := ctx.Query("tags")
+	var tags []string
+	if tgs != "" && tgs != "null" {
+		tags = strings.Split(strings.TrimSpace(tgs), ",")
+	}
 
 	return &domain.BlogPostFilter{
 		Page:       pageInt,
 		PageSize:   pageSizeInt,
 		Recency:    domain.Recency(recency),
-		Tags:       strings.Split(ctx.Query("tags"), ","), // in the url this looks like ?tags=tag1,tag2. if no tags are provided, it will be an empty slice
+		Tags:       tags,
 		AuthorName: ctx.Query("authorName"),
 		Title:      ctx.Query("title"),
 		Popular:    most_popular == "true", // convert string to bool
