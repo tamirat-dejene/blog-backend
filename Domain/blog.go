@@ -63,48 +63,48 @@ type BlogPostFilter struct {
 
 // Repository Interfaces provide an abstraction layer for data access operations related to blogs, comments, and user reactions.
 type BlogPostRepository interface {
-	Create(ctx context.Context, blog *BlogPost) (*BlogPost, error)
-	Update(ctx context.Context, id string, blog BlogPost) (BlogPost, error)
-	Delete(ctx context.Context, id string) error
-	Get(ctx context.Context, filter *BlogPostFilter) ([]BlogPostsPage, error)
-	GetBlogByID(ctx context.Context, id string) (*BlogPost, error)
+	Create(ctx context.Context, blog *BlogPost) (*BlogPost, *DomainError)
+	Update(ctx context.Context, id string, blog BlogPost) (BlogPost, *DomainError)
+	Delete(ctx context.Context, id string) *DomainError
+	Get(ctx context.Context, filter *BlogPostFilter) ([]BlogPostsPage, *DomainError)
+	GetBlogByID(ctx context.Context, id string) (*BlogPost, *DomainError)
 
 	//... more methods can be added based on the usecases
 }
 
 type BlogCommentRepository interface {
-	Create(ctx context.Context, comment BlogComment) (*BlogComment, error)
-	Delete(ctx context.Context, id string) error
-	Update(ctx context.Context, id string, comment BlogComment) (*BlogComment, error)
+	Create(ctx context.Context, comment *BlogComment) (*BlogComment, *DomainError)
+	Delete(ctx context.Context, id string) *DomainError
+	Update(ctx context.Context, id string, comment *BlogComment) (*BlogComment, *DomainError)
 	GetCommentsByBlogID(ctx context.Context, blogID string, limit int) ([]BlogComment, *DomainError)
 	GetCommentByID(ctx context.Context, id string) (*BlogComment, *DomainError)
 }
 
 type BlogUserReactionRepository interface {
-	Create(ctx context.Context, reaction BlogUserReaction) (BlogUserReaction, error)
-	Delete(ctx context.Context, id string) error
-	GetUserReaction(ctx context.Context, blogID, userID string) (BlogUserReaction, error)
+	Create(ctx context.Context, reaction *BlogUserReaction) (*BlogUserReaction, *DomainError)
+	Delete(ctx context.Context, id string) *DomainError
+	GetUserReaction(ctx context.Context, blogID, userID string) (*BlogUserReaction, *DomainError)
 }
 
 // Usecase Interfaces define the business logic for handling blogs, comments, and user reactions.
 type BlogPostUsecase interface {
-	GetBlogs(ctx context.Context, filter *BlogPostFilter) ([]BlogPostsPage, error)
-	GetBlogByID(ctx context.Context, id string) (*BlogPost, error)
-	CreateBlog(ctx context.Context, blog *BlogPost) (*BlogPost, error)
-	UpdateBlog(ctx context.Context, id string, blog BlogPost) (BlogPost, error)
-	DeleteBlog(ctx context.Context, id string) error
+	GetBlogs(ctx context.Context, filter *BlogPostFilter) ([]BlogPostsPage, *DomainError)
+	GetBlogByID(ctx context.Context, id string) (*BlogPost, *DomainError)
+	CreateBlog(ctx context.Context, blog *BlogPost) (*BlogPost, *DomainError)
+	UpdateBlog(ctx context.Context, id string, blog BlogPost) (BlogPost, *DomainError)
+	DeleteBlog(ctx context.Context, id string) *DomainError
 }
 
 type BlogCommentUsecase interface {
-	CreateComment(ctx context.Context, comment BlogComment) (*BlogComment, error)
-	DeleteComment(ctx context.Context, id string) error
+	CreateComment(ctx context.Context, comment *BlogComment) (*BlogComment, *DomainError)
+	DeleteComment(ctx context.Context, id string) *DomainError
 	GetCommentsByBlogID(ctx context.Context, blogID string, limit int) ([]BlogComment, *DomainError)
 	GetCommentByID(ctx context.Context, id string) (*BlogComment, *DomainError)
-	UpdateComment(ctx context.Context, id string, comment BlogComment) (*BlogComment, error)
+	UpdateComment(ctx context.Context, id string, comment *BlogComment) (*BlogComment, *DomainError)
 }
 
 type BlogUserReactionUsecase interface {
-	CreateReaction(ctx context.Context, reaction BlogUserReaction) (BlogUserReaction, error)
-	DeleteReaction(ctx context.Context, id string) error
-	GetUserReaction(ctx context.Context, blogID, userID string) (BlogUserReaction, error)
+	CreateReaction(ctx context.Context, reaction *BlogUserReaction) (*BlogUserReaction, *DomainError)
+	DeleteReaction(ctx context.Context, id string) *DomainError
+	GetUserReaction(ctx context.Context, blogID, userID string) (*BlogUserReaction, *DomainError)
 }

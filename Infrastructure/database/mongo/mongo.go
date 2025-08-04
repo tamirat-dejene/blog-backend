@@ -20,8 +20,8 @@ type Database interface {
 
 type Collection interface {
 	FindOne(ctx context.Context, filter any) SingleResult
-	InsertOne(ctx context.Context, document any) (any, error)
-	InsertMany(ctx context.Context, documents []any) ([]any, error)
+	InsertOne(ctx context.Context, document any) (*mongo.InsertOneResult, error)
+	InsertMany(ctx context.Context, documents []any) (*mongo.InsertManyResult, error)
 	DeleteOne(ctx context.Context, filter any) (int64, error)
 	Find(ctx context.Context, filter any, opts ...*options.FindOptions) (Cursor, error)
 	CountDocuments(ctx context.Context, filter any, opts ...*options.CountOptions) (int64, error)
@@ -139,14 +139,14 @@ func (mc *mongoCollection) FindOne(ctx context.Context, filter any) SingleResult
 	return &mongoSingleResult{sr: mc.coll.FindOne(ctx, filter)}
 }
 
-func (mc *mongoCollection) InsertOne(ctx context.Context, document any) (any, error) {
+func (mc *mongoCollection) InsertOne(ctx context.Context, document any) (*mongo.InsertOneResult, error) {
 	res, err := mc.coll.InsertOne(ctx, document)
-	return res.InsertedID, err
+	return res, err
 }
 
-func (mc *mongoCollection) InsertMany(ctx context.Context, documents []any) ([]any, error) {
+func (mc *mongoCollection) InsertMany(ctx context.Context, documents []any) (*mongo.InsertManyResult, error) {
 	res, err := mc.coll.InsertMany(ctx, documents)
-	return res.InsertedIDs, err
+	return res, err
 }
 
 func (mc *mongoCollection) DeleteOne(ctx context.Context, filter any) (int64, error) {

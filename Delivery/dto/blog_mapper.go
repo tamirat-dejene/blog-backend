@@ -6,10 +6,9 @@ import (
 )
 
 type BlogPostRequest struct {
-	Title    string   `json:"title" binding:"required"`
-	Content  string   `json:"content" binding:"required"`
-	AuthorID string   `json:"author_id" binding:"required"` // string, will convert to ObjectID in domain
-	Tags     []string `json:"tags"`
+	Title   string   `json:"title" binding:"required"`
+	Content string   `json:"content" binding:"required"`
+	Tags    []string `json:"tags"`
 }
 
 type BlogPostResponse struct {
@@ -28,10 +27,15 @@ type BlogPostResponse struct {
 	PopularityScore int       `json:"popularity_score"` // computed popularity score
 }
 
+type BlogPostsPageResponse struct {
+	Blogs      []BlogPostResponse `json:"blogs"`
+	PageSize   int                `json:"page_size"`
+	PageNumber int                `json:"page_number"`
+}
+
 type BlogUserReactionRequest struct {
-	UserID string `json:"user_id" binding:"required"`
 	BlogID string `json:"blog_id" binding:"required"`
-	IsLike bool   `json:"is_like"`
+	IsLike bool   `json:"is_like" binding:"required"`
 }
 
 type BlogUserReactionResponse struct {
@@ -43,10 +47,8 @@ type BlogUserReactionResponse struct {
 }
 
 type BlogCommentRequest struct {
-	ID       string `json:"id"`
-	BlogID   string `json:"blog_id"`
-	AuthorID string `json:"author_id"`
-	Comment  string `json:"comment"`
+	BlogID  string `json:"blog_id"`
+	Comment string `json:"comment"`
 }
 
 type BlogCommentResponse struct {
@@ -59,15 +61,13 @@ type BlogCommentResponse struct {
 
 type ReactionQuery struct {
 	BlogId string `form:"blog_id" binding:"required"`
-	UserId string `form:"user_id" binding:"required"`
 }
 
-func ToDomainBlogPost(req BlogPostRequest) domain.BlogPost {
-	return domain.BlogPost{
-		Title:           req.Title,
-		Content:         req.Content,
-		AuthorID:        req.AuthorID,
-		Tags:            req.Tags,
+func (b *BlogPostRequest) ToDomain() *domain.BlogPost {
+	return &domain.BlogPost{
+		Title:           b.Title,
+		Content:         b.Content,
+		Tags:            b.Tags,
 		CreatedAt:       time.Now(),
 		UpdatedAt:       time.Now(),
 		Likes:           0,
@@ -77,58 +77,61 @@ func ToDomainBlogPost(req BlogPostRequest) domain.BlogPost {
 		PopularityScore: 0,
 	}
 }
-func FromDomainBlogPost(post *domain.BlogPost) BlogPostResponse {
-	return BlogPostResponse{
-		ID:              post.ID,
-		Title:           post.Title,
-		Content:         post.Content,
-		AuthorID:        post.AuthorID,
-		AuthorName:      post.AuthorName,
-		Tags:            post.Tags,
-		CreatedAt:       post.CreatedAt,
-		UpdatedAt:       post.UpdatedAt,
-		Likes:           post.Likes,
-		Dislikes:        post.Dislikes,
-		ViewCount:       post.ViewCount,
-		CommentCount:    post.CommentCount,
-		PopularityScore: post.PopularityScore,
-	}
+
+func (b *BlogPostResponse) Parse(blog *domain.BlogPost) {
+	b.ID = blog.ID
+	b.Title = blog.Title
+	b.Content = blog.Content
+	b.AuthorID = blog.AuthorID
+	b.AuthorName = blog.AuthorName
+	b.Tags = blog.Tags
+	b.CreatedAt = blog.CreatedAt
+	b.UpdatedAt = blog.UpdatedAt
+	b.Likes = blog.Likes
+	b.Dislikes = blog.Dislikes
+	b.ViewCount = blog.ViewCount
+	b.CommentCount = blog.CommentCount
+	b.PopularityScore = blog.PopularityScore
 }
 
-func ToDomainBlogReaction(req BlogUserReactionRequest) domain.BlogUserReaction {
-	return domain.BlogUserReaction{
-		UserID:    req.UserID,
-		BlogID:    req.BlogID,
+func (r *BlogUserReactionRequest) ToDomain() *domain.BlogUserReaction {
+	return &domain.BlogUserReaction{
+		BlogID:    r.BlogID,
+		IsLike:    r.IsLike,
 		CreatedAt: time.Now(),
-		IsLike:    req.IsLike,
 	}
 }
 
-func FromDomainBlogReaction(response domain.BlogUserReaction) BlogUserReactionResponse {
-	return BlogUserReactionResponse{
-		ID:        response.ID,
-		BlogID:    response.BlogID,
-		UserID:    response.UserID,
-		CreatedAt: response.CreatedAt,
-		IsLike:    response.IsLike,
+func (r *BlogUserReactionResponse) Parse(reaction *domain.BlogUserReaction) {
+	r.ID = reaction.ID
+	r.BlogID = reaction.BlogID
+	r.UserID = reaction.UserID
+	r.IsLike = reaction.IsLike
+	r.CreatedAt = reaction.CreatedAt
+}
+
+func (b *BlogCommentRequest) ToDomain() *domain.BlogComment {
+	return &domain.BlogComment{
+		BlogID:    b.BlogID,
+		Comment:   b.Comment,
+		CreatedAt: time.Now(),
 	}
 }
 
-func ToDomainBlogComment(req BlogCommentRequest) domain.BlogComment {
-	return domain.BlogComment{
-		ID:       req.ID,
-		BlogID:   req.BlogID,
-		AuthorID: req.AuthorID,
-		Comment:  req.Comment,
-	}
+func (b *BlogCommentResponse) Parse(comment *domain.BlogComment) {
+	b.ID = comment.ID
+	b.BlogID = comment.BlogID
+	b.AuthorID = comment.AuthorID
+	b.Comment = comment.Comment
+	b.CreatedAt = comment.CreatedAt
 }
 
-func FromDomainBlogComment(response domain.BlogComment) BlogCommentResponse {
-	return BlogCommentResponse{
-		ID:        response.ID,
-		BlogID:    response.BlogID,
-		AuthorID:  response.AuthorID,
-		Comment:   response.Comment,
-		CreatedAt: response.CreatedAt,
+func (pr *BlogPostsPageResponse) Parse(page *domain.BlogPostsPage) {
+	pr.PageSize = page.PageSize
+	pr.PageNumber = page.PageNumber
+	pr.Blogs = make([]BlogPostResponse, len(page.Blogs))
+	for i, blog := range page.Blogs {
+		pr.Blogs[i] = BlogPostResponse{}
+		pr.Blogs[i].Parse(&blog)
 	}
 }

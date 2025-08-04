@@ -84,6 +84,7 @@ func BuildBlogRetrievalAggregationPipeline(filter *domain.BlogPostFilter) []bson
 	return pipeline
 }
 
+// PaginateBlogs takes a slice of BlogPostModel and returns a paginated result based on the page size.
 func PaginateBlogs(blogs []mapper.BlogPostModel, pageSize int) []domain.BlogPostsPage {
 	totalBlogs := len(blogs)
 	totalPages := (totalBlogs + pageSize - 1) / pageSize
@@ -97,7 +98,7 @@ func PaginateBlogs(blogs []mapper.BlogPostModel, pageSize int) []domain.BlogPost
 		paginatedBlogs := blogs[start:end]
 		domainBlogs := make([]domain.BlogPost, len(paginatedBlogs))
 		for i, blog := range paginatedBlogs {
-			domainBlogs[i] = *mapper.BlogToDomain(&blog)
+			domainBlogs[i] = *blog.ToDomain()
 		}
 
 		pageObj := domain.BlogPostsPage{

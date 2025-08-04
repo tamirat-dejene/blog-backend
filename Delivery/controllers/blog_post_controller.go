@@ -53,21 +53,31 @@ func (b *BlogPostController) GetBlogPosts(ctx *gin.Context) {
 	filter := b.parseBlogPostFilter(ctx)
 	paginated_blogs, err := b.BlogPostUsecase.GetBlogs(ctx, filter)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, domain.ErrorResponse{
+		ctx.JSON(err.Code, domain.ErrorResponse{
 			Message: "Failed to retrieve blogs",
-			Error:   err.Error(),
-			Code:    http.StatusInternalServerError,
+			Error:   err.Err.Error(),
+			Code:    err.Code,
 		})
 		return
 	}
 
+	// Convert paginated blogs to response DTO
+	var response = make([]dto.BlogPostsPageResponse, len(paginated_blogs))
+	for idx, page := range paginated_blogs {
+		page_response := dto.BlogPostsPageResponse{}
+		page_response.Parse(&page)
+		response[idx] = page_response
+	}
+
+	// Return the response
 	ctx.JSON(http.StatusOK, domain.SuccessResponse{
 		Message: "Successfully retrieved blogs",
-		Data:    gin.H{"TotalPages": len(paginated_blogs), "Pages": paginated_blogs},
+		Data:    gin.H{"total_pages": len(paginated_blogs), "pages": response},
 	})
 }
 
 func (b *BlogPostController) GetBlogPostByID(ctx *gin.Context) {
+	// Get the blog ID from the URL parameters
 	blog_id := ctx.Param("id")
 	if blog_id == "" {
 		ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
@@ -77,19 +87,24 @@ func (b *BlogPostController) GetBlogPostByID(ctx *gin.Context) {
 		return
 	}
 
+	// Attempt to retrieve the blog post by ID
 	blog, err := b.BlogPostUsecase.GetBlogByID(ctx, blog_id)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, domain.ErrorResponse{
+		ctx.JSON(err.Code, domain.ErrorResponse{
 			Message: "Failed to retrieve blog",
-			Error:   err.Error(),
-			Code:    http.StatusInternalServerError,
+			Error:   err.Err.Error(),
+			Code:    err.Code,
 		})
 		return
 	}
 
+	// Convert the blog post to a response DTO
+	var blog_response dto.BlogPostResponse
+	blog_response.Parse(blog)
+
 	ctx.JSON(http.StatusOK, domain.SuccessResponse{
 		Message: "Successfully retrieved blog",
-		Data:    blog,
+		Data:    blog_response,
 	})
 }
 
@@ -97,39 +112,78 @@ func (b *BlogPostController) CreateBlog(ctx *gin.Context) {
 	var req dto.BlogPostRequest
 
 	if err := ctx.ShouldBind(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: "Invalid request payload",
+			Error:   err.Error(),
+			Code:    http.StatusBadRequest,
+		})
 		return
 	}
-	blog := dto.ToDomainBlogPost(req)
-	createdBlog, err := b.BlogPostUsecase.CreateBlog(ctx, &blog)
 
+	blog_post := req.ToDomain()
+	blog_post.AuthorID = ctx.GetString("user_id") // user_id is set in the context from middleware
+
+	createdBlog, err := b.BlogPostUsecase.CreateBlog(ctx, blog_post)
+
+	// Send create error response if any
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.JSON(err.Code, domain.ErrorResponse{
+			Message: "Failed to create blog",
+			Error:   err.Err.Error(),
+			Code:    err.Code,
+		})
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, createdBlog)
+	// Convert the created blog to response DTO
+	var response dto.BlogPostResponse
+	response.Parse(createdBlog)
+
+	// Return the response
+	ctx.JSON(http.StatusCreated, domain.SuccessResponse{
+		Message: "Successfully created blog",
+		Data:    response,
+	})
 }
 
 func (b *BlogPostController) UpdateBlog(ctx *gin.Context) {
 	id := ctx.Param("id")
+
+	// Bind request body to DTO
 	var req dto.BlogPostRequest
-
-	if err := ctx.ShouldBind(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: "Invalid request payload",
+			Error:   err.Error(),
+			Code:    http.StatusBadRequest,
+		})
 		return
 	}
-	blog := dto.ToDomainBlogPost(req)
 
-	updatedBlog, err := b.BlogPostUsecase.UpdateBlog(ctx, id, blog)
+	// Convert DTO to domain model
+	blog := req.ToDomain()
+	blog.ID = id
+	blog.AuthorID = ctx.GetString("user_id") // Extracted from auth middleware
 
+	// Attempt to update the blog post
+	updatedBlog, err := b.BlogPostUsecase.UpdateBlog(ctx, id, *blog)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.JSON(err.Code, domain.ErrorResponse{
+			Message: "Failed to update blog",
+			Error:   err.Err.Error(),
+			Code:    err.Code,
+		})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, updatedBlog)
+	var response dto.BlogPostResponse
+	response.Parse(&updatedBlog)
 
+	// Success response
+	ctx.JSON(http.StatusOK, domain.SuccessResponse{
+		Message: "Successfully updated blog",
+		Data:    response,
+	})
 }
 
 func (b *BlogPostController) DeleteBlog(ctx *gin.Context) {
@@ -138,8 +192,15 @@ func (b *BlogPostController) DeleteBlog(ctx *gin.Context) {
 	err := b.BlogPostUsecase.DeleteBlog(ctx, id)
 
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.JSON(err.Code, domain.ErrorResponse{
+			Message: "Failed to delete blog",
+			Error:   err.Err.Error(),
+			Code:    err.Code,
+		})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"message": "Successfully deleted"})
+	ctx.JSON(http.StatusOK, domain.SuccessResponse{
+		Message: "Successfully deleted blog",
+		Data:    nil,
+	})
 }

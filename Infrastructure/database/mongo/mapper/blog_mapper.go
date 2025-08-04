@@ -1,6 +1,7 @@
 package mapper
 
 import (
+	"fmt"
 	domain "g6/blog-api/Domain"
 	"time"
 
@@ -43,129 +44,94 @@ type ObjectIDModel struct {
 	ID primitive.ObjectID `bson:"_id,omitempty"`
 }
 
-// Convert to domain
-func BlogToDomain(blog *BlogPostModel) *domain.BlogPost {
-	return &domain.BlogPost{
-		ID:        blog.ID.Hex(),
-		Title:     blog.Title,
-		Content:   blog.Content,
-		AuthorID:  blog.AuthorID.Hex(),
-		Tags:      blog.Tags,
-		CreatedAt: blog.CreatedAt,
-		UpdatedAt: blog.UpdatedAt,
-		Likes:     blog.Likes,
-		Dislikes:  blog.Dislikes,
-		ViewCount: blog.ViewCount,
-	}
-}
-
-// Convert from domain
-func BlogFromDomain(blog *domain.BlogPost) (*BlogPostModel, error) {
-	authorID, err := primitive.ObjectIDFromHex(blog.AuthorID)
+func (b *BlogPostModel) Parse(bp *domain.BlogPost) error {
+	b.Title = bp.Title
+	b.Content = bp.Content
+	authorID, err := primitive.ObjectIDFromHex(bp.AuthorID)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("invalid author ID: %w", err)
 	}
-
-	var objectID primitive.ObjectID
-	if blog.ID != "" {
-		objectID, err = primitive.ObjectIDFromHex(blog.ID)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		objectID = primitive.NewObjectID()
-	}
-
-	return &BlogPostModel{
-		ID:        objectID,
-		Title:     blog.Title,
-		Content:   blog.Content,
-		AuthorID:  authorID,
-		Tags:      blog.Tags,
-		CreatedAt: blog.CreatedAt,
-		UpdatedAt: blog.UpdatedAt,
-		Likes:     blog.Likes,
-		Dislikes:  blog.Dislikes,
-		ViewCount: blog.ViewCount,
-	}, nil
+	b.AuthorID = authorID
+	b.AuthorName = bp.AuthorName
+	b.Tags = bp.Tags
+	b.CreatedAt = bp.CreatedAt
+	b.UpdatedAt = bp.UpdatedAt
+	b.Likes = bp.Likes
+	b.Dislikes = bp.Dislikes
+	b.ViewCount = bp.ViewCount
+	b.CommentCount = bp.CommentCount
+	b.PopularityScore = bp.PopularityScore
+	return nil
 }
 
-// Convert BlogCommentModel to domain.BlogComment
-func BlogCommentToDomain(comment *BlogCommentModel) *domain.BlogComment {
-	return &domain.BlogComment{
-		ID:        comment.ID.Hex(),
-		BlogID:    comment.BlogID.Hex(),
-		AuthorID:  comment.AuthorID.Hex(),
-		Comment:   comment.Comment,
-		CreatedAt: comment.CreatedAt,
+func (b *BlogPostModel) ToDomain() *domain.BlogPost {
+	return &domain.BlogPost{
+		ID:              b.ID.Hex(),
+		Title:           b.Title,
+		Content:         b.Content,
+		AuthorID:        b.AuthorID.Hex(),
+		AuthorName:      b.AuthorName,
+		Tags:            b.Tags,
+		CreatedAt:       b.CreatedAt,
+		UpdatedAt:       b.UpdatedAt,
+		Likes:           b.Likes,
+		Dislikes:        b.Dislikes,
+		ViewCount:       b.ViewCount,
+		CommentCount:    b.CommentCount,
+		PopularityScore: b.PopularityScore,
 	}
 }
 
-// Convert domain.BlogComment to BlogCommentModel
-func BlogCommentFromDomain(comment *domain.BlogComment) (*BlogCommentModel, error) {
+func (c *BlogCommentModel) Parse(comment *domain.BlogComment) error {
+	c.Comment = comment.Comment
 	blogID, err := primitive.ObjectIDFromHex(comment.BlogID)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("invalid blog ID: %w", err)
 	}
+	c.BlogID = blogID
 	authorID, err := primitive.ObjectIDFromHex(comment.AuthorID)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("invalid author ID: %w", err)
 	}
-
-	var objectID primitive.ObjectID
-	if comment.ID != "" {
-		objectID, err = primitive.ObjectIDFromHex(comment.ID)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		objectID = primitive.NewObjectID()
-	}
-
-	return &BlogCommentModel{
-		ID:       objectID,
-		BlogID:   blogID,
-		AuthorID: authorID,
-		Comment:  comment.Comment,
-	}, nil
+	c.AuthorID = authorID
+	c.CreatedAt = comment.CreatedAt
+	return nil
 }
 
-// Convert to domain
-func BlogUserReactionToDomain(reaction *BlogUserReactionModel) *domain.BlogUserReaction {
-	return &domain.BlogUserReaction{
-		ID:        reaction.BlogID.Hex(),
-		BlogID:    reaction.BlogID.Hex(),
-		UserID:    reaction.UserID.Hex(),
-		IsLike:    reaction.IsLike,
-		CreatedAt: reaction.CreatedAt,
+func (c *BlogCommentModel) ToDomain() *domain.BlogComment {
+	return &domain.BlogComment{
+		ID:        c.ID.Hex(),
+		BlogID:    c.BlogID.Hex(),
+		AuthorID:  c.AuthorID.Hex(),
+		Comment:   c.Comment,
+		CreatedAt: c.CreatedAt,
 	}
 }
 
-func BlogUserReactionFromDomain(reaction *domain.BlogUserReaction) (*BlogUserReactionModel, error) {
+func (b *BlogUserReactionModel) Parse(reaction *domain.BlogUserReaction) error {
+	blogID, err := primitive.ObjectIDFromHex(reaction.BlogID)
+	if err != nil {
+		return fmt.Errorf("invalid blog ID: %w", err)
+	}
+	b.BlogID = blogID
+
 	userID, err := primitive.ObjectIDFromHex(reaction.UserID)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("invalid user ID: %w", err)
 	}
-	blogID, err := primitive.ObjectIDFromHex(reaction.BlogID)
+	b.UserID = userID
 
-	if err != nil {
-		return nil, err
+	b.IsLike = reaction.IsLike
+	b.CreatedAt = reaction.CreatedAt
+	return nil
+}
+
+func (b *BlogUserReactionModel) ToDomain() *domain.BlogUserReaction {
+	return &domain.BlogUserReaction{
+		ID:        b.ID.Hex(),
+		BlogID:    b.BlogID.Hex(),
+		UserID:    b.UserID.Hex(),
+		IsLike:    b.IsLike,
+		CreatedAt: b.CreatedAt,
 	}
-
-	var objectID primitive.ObjectID
-	if reaction.ID != "" {
-		objectID, err = primitive.ObjectIDFromHex(reaction.ID)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		objectID = primitive.NewObjectID()
-	}
-
-	return &BlogUserReactionModel{
-		ID:     objectID,
-		BlogID: blogID,
-		UserID: userID,
-		IsLike: reaction.IsLike,
-	}, nil
 }
