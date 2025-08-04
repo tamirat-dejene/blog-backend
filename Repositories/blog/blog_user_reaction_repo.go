@@ -6,6 +6,7 @@ import (
 	domain "g6/blog-api/Domain"
 	"g6/blog-api/Infrastructure/database/mongo"
 	"g6/blog-api/Infrastructure/database/mongo/mapper"
+	"g6/blog-api/Infrastructure/database/mongo/utils"
 	"net/http"
 	"time"
 
@@ -122,6 +123,23 @@ func (u *BlogUserReactionRepo) Create(ctx context.Context, reaction *domain.Blog
 	if _, err := blogCollection.UpdateOne(ctx, blogFilter, bson.M{"$inc": adjust}); err != nil {
 		return nil, &domain.DomainError{
 			Err:  fmt.Errorf("failed to adjust blog reaction counters: %w", err),
+			Code: http.StatusInternalServerError,
+		}
+	}
+
+	// Update popularity score, find the blog again
+	var blogModel mapper.BlogPostModel
+	if err := blogCollection.FindOne(ctx, blogFilter).Decode(&blogModel); err != nil {
+		return nil, &domain.DomainError{
+			Err:  fmt.Errorf("failed to find blog for popularity score update: %w", err),
+			Code: http.StatusInternalServerError,
+		}
+	}
+
+	ps := utils.CalculatePopularityScore(blogModel.Likes, blogModel.ViewCount, blogModel.CommentCount, blogModel.Dislikes)
+	if _, err := blogCollection.UpdateOne(ctx, blogFilter, bson.M{"$set": bson.M{"popularity_score": ps}}); err != nil {
+		return nil, &domain.DomainError{
+			Err:  fmt.Errorf("failed to update blog popularity score: %w", err),
 			Code: http.StatusInternalServerError,
 		}
 	}
