@@ -2,23 +2,30 @@ package routers
 
 import (
 	"g6/blog-api/Delivery/bootstrap"
+	"g6/blog-api/Delivery/controllers"
 	"g6/blog-api/Infrastructure/database/mongo"
+	repository "g6/blog-api/Repositories/blog"
+	usecases "g6/blog-api/Usecases"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 func NewBlogUserReactionRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Database) {
-	// blogUserReactionGroup := api.Group("/blog/reactions")
+	blogUserReactionGroup := api.Group("/blog/reactions")
 
 	// Initialize the blog user reaction repository, usecase, and controller
-	// blogUserReactionRepo := repository.NewBlogUserReactionRepo(db, env.BlogUserReactionCollection)
-	// blogUserReactionUsecase := usecases.NewBlogUserReactionUsecase(blogUserReactionRepo, time.Duration(env.CtxTSeconds)*time.Second)
-	// blogUserReactionController := controllers.BlogUserReactionController{
-	// 	BlogUserReactionUsecase: blogUserReactionUsecase,
-	// 	Env:                     env,
-	// }
+	blog_user_reaction_controller := controllers.BlogReactionController{
+		BlogUserReactionUsecase: usecases.NewBlogUserReactionUsecase(repository.NewUserReactionRepo(db, &mongo.Collections{
+			BlogPosts:         env.BlogPostCollection,
+			BlogComments:      env.BlogCommentCollection,
+			BlogUserReactions: env.BlogUserReactionCollection,
+		}), time.Duration(env.CtxTSeconds)*time.Second),
+		Env: env,
+	}
 
 	// Define routes for blog user reactions
-	// blogUserReactionGroup.POST("/", blogUserReactionController.CreateBlogUserReaction) // Create a new reaction
-	// Add more blog user reaction-related routes here as needed
+	blogUserReactionGroup.POST("/", blog_user_reaction_controller.CreateReaction)      // Create a new reaction
+	blogUserReactionGroup.GET("/", blog_user_reaction_controller.GetUserReaction)      // Get user reaction
+	blogUserReactionGroup.DELETE("/:id", blog_user_reaction_controller.DeleteReaction) // Delete user reaction
 }

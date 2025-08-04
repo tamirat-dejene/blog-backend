@@ -51,7 +51,7 @@ func BlogToDomain(blog *BlogPostModel) *domain.BlogPost {
 		Content:   blog.Content,
 		AuthorID:  blog.AuthorID.Hex(),
 		Tags:      blog.Tags,
-		CreatedAt: blog.CreatedAt,	
+		CreatedAt: blog.CreatedAt,
 		UpdatedAt: blog.UpdatedAt,
 		Likes:     blog.Likes,
 		Dislikes:  blog.Dislikes,
@@ -123,11 +123,10 @@ func BlogCommentFromDomain(comment *domain.BlogComment) (*BlogCommentModel, erro
 	}
 
 	return &BlogCommentModel{
-		ID:        objectID,
-		BlogID:    blogID,
-		AuthorID:  authorID,
-		Comment:   comment.Comment,
-		CreatedAt: comment.CreatedAt,
+		ID:       objectID,
+		BlogID:   blogID,
+		AuthorID: authorID,
+		Comment:  comment.Comment,
 	}, nil
 }
 
@@ -164,10 +163,9 @@ func BlogUserReactionFromDomain(reaction *domain.BlogUserReaction) (*BlogUserRea
 	}
 
 	return &BlogUserReactionModel{
-		ID:        objectID,
-		BlogID:    blogID,
-		UserID:    userID,
-		IsLike:    reaction.IsLike,
-		CreatedAt: reaction.CreatedAt,
+		ID:     objectID,
+		BlogID: blogID,
+		UserID: userID,
+		IsLike: reaction.IsLike,
 	}, nil
 }

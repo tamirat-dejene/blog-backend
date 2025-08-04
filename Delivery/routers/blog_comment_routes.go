@@ -22,7 +22,7 @@ func NewBlogCommentRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Dat
 					BlogUserReactions: env.BlogUserReactionCollection,
 				},
 			),
-			time.Duration(env.CtxTSeconds) * time.Second,
+			time.Duration(env.CtxTSeconds)*time.Second,
 		),
 		Env: env,
 	}

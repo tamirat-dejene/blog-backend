@@ -2,7 +2,9 @@ package controllers
 
 import (
 	"g6/blog-api/Delivery/bootstrap"
+	"g6/blog-api/Delivery/dto"
 	domain "g6/blog-api/Domain"
+	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -14,11 +16,36 @@ type BlogCommentController struct {
 }
 
 func (b *BlogCommentController) CreateComment(ctx *gin.Context) {
-	// Implementation for creating a comment
+	var req dto.BlogCommentRequest
+
+	err := ctx.ShouldBind(&req)
+
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	comment := dto.ToDomainBlogComment(req)
+
+	createdComment, err := b.BlogCommentUsecase.CreateComment(ctx, comment)
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, gin.H{"success": createdComment})
 }
 
 func (b *BlogCommentController) DeleteComment(ctx *gin.Context) {
-	// Implementation for deleting a comment
+	id := ctx.Param("id")
+
+	err := b.BlogCommentUsecase.DeleteComment(ctx, id)
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"success": "deleted"})
 }
 
 func (b *BlogCommentController) GetCommentByID(ctx *gin.Context) {
@@ -76,5 +103,20 @@ func (b *BlogCommentController) GetCommentsByBlogID(ctx *gin.Context) {
 }
 
 func (b *BlogCommentController) UpdateComment(ctx *gin.Context) {
-	// Implementation for updating a comment
+	id := ctx.Param("id")
+	var req dto.BlogCommentRequest
+
+	if err := ctx.ShouldBind(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+	comment := dto.ToDomainBlogComment(req)
+	updatedComment, err := b.BlogCommentUsecase.UpdateComment(ctx, id, comment)
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"Updated Comment": updatedComment})
 }
