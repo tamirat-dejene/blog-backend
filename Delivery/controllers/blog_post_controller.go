@@ -7,6 +7,7 @@ import (
 	domain "g6/blog-api/Domain"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -42,7 +43,7 @@ func (b *BlogPostController) parseBlogPostFilter(ctx *gin.Context) *domain.BlogP
 		Page:       pageInt,
 		PageSize:   pageSizeInt,
 		Recency:    domain.Recency(recency),
-		Tags:       ctx.QueryArray("tags"), // in the url this looks like ?tags=tag1,tag2. if no tags are provided, it will be an empty slice
+		Tags:       strings.Split(ctx.Query("tags"), ","), // in the url this looks like ?tags=tag1,tag2. if no tags are provided, it will be an empty slice
 		AuthorName: ctx.Query("authorName"),
 		Title:      ctx.Query("title"),
 		Popular:    most_popular == "true", // convert string to bool
