@@ -1,6 +1,7 @@
 package mapper
 
 import (
+	"fmt"
 	domain "g6/blog-api/Domain"
 	"time"
 
@@ -43,19 +44,41 @@ type ObjectIDModel struct {
 	ID primitive.ObjectID `bson:"_id,omitempty"`
 }
 
-// Convert to domain
-func BlogToDomain(blog *BlogPostModel) *domain.BlogPost {
+func (b *BlogPostModel) Parse(bp *domain.BlogPost) error {
+	b.Title = bp.Title
+	b.Content = bp.Content
+	authorID, err := primitive.ObjectIDFromHex(bp.AuthorID)
+	if err != nil {
+		return fmt.Errorf("invalid author ID: %w", err)
+	}
+	b.AuthorID = authorID
+	b.AuthorName = bp.AuthorName
+	b.Tags = bp.Tags
+	b.CreatedAt = bp.CreatedAt
+	b.UpdatedAt = bp.UpdatedAt
+	b.Likes = bp.Likes
+	b.Dislikes = bp.Dislikes
+	b.ViewCount = bp.ViewCount
+	b.CommentCount = bp.CommentCount
+	b.PopularityScore = bp.PopularityScore
+	return nil
+}
+
+func (b *BlogPostModel) ToDomain() *domain.BlogPost {
 	return &domain.BlogPost{
-		ID:        blog.ID.Hex(),
-		Title:     blog.Title,
-		Content:   blog.Content,
-		AuthorID:  blog.AuthorID.Hex(),
-		Tags:      blog.Tags,
-		CreatedAt: blog.CreatedAt,
-		UpdatedAt: blog.UpdatedAt,
-		Likes:     blog.Likes,
-		Dislikes:  blog.Dislikes,
-		ViewCount: blog.ViewCount,
+		ID:              b.ID.Hex(),
+		Title:           b.Title,
+		Content:         b.Content,
+		AuthorID:        b.AuthorID.Hex(),
+		AuthorName:      b.AuthorName,
+		Tags:            b.Tags,
+		CreatedAt:       b.CreatedAt,
+		UpdatedAt:       b.UpdatedAt,
+		Likes:           b.Likes,
+		Dislikes:        b.Dislikes,
+		ViewCount:       b.ViewCount,
+		CommentCount:    b.CommentCount,
+		PopularityScore: b.PopularityScore,
 	}
 }
 

@@ -2,11 +2,13 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	domain "g6/blog-api/Domain"
 	"g6/blog-api/Infrastructure/database/mongo"
 	"g6/blog-api/Infrastructure/database/mongo/mapper"
 	"g6/blog-api/Infrastructure/database/mongo/utils"
+	"net/http"
 
 	"time"
 
@@ -20,73 +22,133 @@ type blogPostRepo struct {
 }
 
 // Create implements domain.BlogRepository.
-func (b *blogPostRepo) Create(ctx context.Context, blog *domain.BlogPost) (*domain.BlogPost, error) {
-	blog_model, err := mapper.BlogFromDomain(blog)
-	if err != nil {
-		return nil, err
+func (b *blogPostRepo) Create(ctx context.Context, blog *domain.BlogPost) (*domain.BlogPost, *domain.DomainError) {
+	// Map the domain model to the DB model
+	blogModel := &mapper.BlogPostModel{}
+	if err := blogModel.Parse(blog); err != nil {
+		return nil, &domain.DomainError{
+			Err:  err,
+			Code: http.StatusInternalServerError,
+		}
 	}
-	insertedID, err := b.db.Collection(b.collections.BlogPosts).InsertOne(ctx, blog_model)
+
+	// Insert the blog into the collection
+	result, err := b.db.Collection(b.collections.BlogPosts).InsertOne(ctx, blogModel)
 	if err != nil {
-		return nil, err
+		return nil, &domain.DomainError{
+			Err:  err,
+			Code: http.StatusInternalServerError,
+		}
 	}
-	blog.ID = insertedID.(string)
+
+	// Extract the inserted ID
+	objectID, ok := result.InsertedID.(primitive.ObjectID)
+	if !ok {
+		return nil, &domain.DomainError{
+			Err:  errors.New("failed to cast inserted ID to ObjectID"),
+			Code: http.StatusInternalServerError,
+		}
+	}
+
+	// Set the generated ID back to domain model
+	blog.ID = objectID.Hex()
 	return blog, nil
 }
 
 // Delete implements domain.BlogRepository.
-func (b *blogPostRepo) Delete(ctx context.Context, id string) error {
+func (b *blogPostRepo) Delete(ctx context.Context, id string) *domain.DomainError {
 	oid, err := primitive.ObjectIDFromHex(id)
 
 	if err != nil {
-		return err
+		return &domain.DomainError{
+			Err:  err,
+			Code: http.StatusBadRequest,
+		}
 	}
 	_, err = b.db.Collection(b.collections.BlogPosts).DeleteOne(ctx, bson.M{"_id": oid})
-	return err
+	if err != nil {
+		return &domain.DomainError{
+			Err:  err,
+			Code: http.StatusInternalServerError,
+		}
+	}
+	return nil
 }
 
 // Get implements domain.BlogRepository.
-func (b *blogPostRepo) Get(ctx context.Context, filter *domain.BlogPostFilter) ([]domain.BlogPostsPage, error) {
+func (b *blogPostRepo) Get(ctx context.Context, filter *domain.BlogPostFilter) ([]domain.BlogPostsPage, *domain.DomainError) {
 	collection := b.db.Collection(b.collections.BlogPosts)
 	pipeline := utils.BuildBlogRetrievalAggregationPipeline(filter)
 
 	cursor, err := collection.Aggregate(ctx, pipeline)
 	if err != nil {
-		return nil, fmt.Errorf("aggregate blog posts failed: %w", err)
+		return nil, &domain.DomainError{
+			Err:  err,
+			Code: http.StatusInternalServerError,
+		}
 	}
 	defer cursor.Close(ctx)
 
 	var dbResults []mapper.BlogPostModel
 	if err := cursor.All(ctx, &dbResults); err != nil {
-		return nil, fmt.Errorf("decoding blog posts failed: %w", err)
+		return nil, &domain.DomainError{
+			Err:  err,
+			Code: http.StatusInternalServerError,
+		}
 	}
 
 	return utils.PaginateBlogs(dbResults, filter.PageSize), nil
 }
 
 // GetBlogByID implements domain.BlogRepository.
-func (b *blogPostRepo) GetBlogByID(ctx context.Context, id string)(*domain.BlogPost, error) {
+func (b *blogPostRepo) GetBlogByID(ctx context.Context, id string) (*domain.BlogPost, *domain.DomainError) {
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, fmt.Errorf("invalid blog ID: %w", err)
+		return nil, &domain.DomainError{
+			Err:  err,
+			Code: http.StatusBadRequest,
+		}
 	}
 
 	var blogModel mapper.BlogPostModel
 	err = b.db.Collection(b.collections.BlogPosts).FindOne(ctx, bson.M{"_id": oid}).Decode(&blogModel)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find blog by ID: %w", err)
+		return nil, &domain.DomainError{
+			Err:  err,
+			Code: http.StatusInternalServerError,
+		}
 	}
 
-	blog := mapper.BlogToDomain(&blogModel)
-	
+	// Convert the model to domain
+	if blogModel.ID.IsZero() {
+		return nil, &domain.DomainError{
+			Err:  err,
+			Code: http.StatusNotFound,
+		}
+	}
+
+	blog := blogModel.ToDomain()
+	if blog == nil {
+		return nil, &domain.DomainError{
+			Err:  fmt.Errorf("failed to convert blog model to domain for ID: %s", id),
+			Code: http.StatusInternalServerError,
+		}
+	}
+
+	// Set the ID back to the domain model
+	blog.ID = blogModel.ID.Hex()
 	return blog, nil
 }
 
 // Update implements domain.BlogRepository.
-func (b *blogPostRepo) Update(ctx context.Context, id string, blog domain.BlogPost) (domain.BlogPost, error) {
+func (b *blogPostRepo) Update(ctx context.Context, id string, blog domain.BlogPost) (domain.BlogPost, *domain.DomainError) {
 	oid, err := primitive.ObjectIDFromHex(blog.ID)
 
 	if err != nil {
-		return domain.BlogPost{}, err
+		return domain.BlogPost{}, &domain.DomainError{
+			Err:  err,
+			Code: http.StatusBadRequest,
+		}
 	}
 	blog.UpdatedAt = time.Now()
 
@@ -100,7 +162,16 @@ func (b *blogPostRepo) Update(ctx context.Context, id string, blog domain.BlogPo
 	}
 
 	_, err = b.db.Collection(b.collections.BlogPosts).UpdateOne(ctx, oid, update)
-	return domain.BlogPost{}, err
+	if err != nil {
+		return domain.BlogPost{}, &domain.DomainError{
+			Err:  err,
+			Code: http.StatusInternalServerError,
+		}
+	}
+
+	// Return the updated blog
+	blog.ID = oid.Hex()
+	return blog, nil
 }
 
 func NewBlogPostRepo(database mongo.Database, collections *mongo.Collections) domain.BlogPostRepository {

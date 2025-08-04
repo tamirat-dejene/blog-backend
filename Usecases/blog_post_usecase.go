@@ -13,7 +13,7 @@ type blogPostUsecase struct {
 }
 
 // CreateBlog implements domain.BlogUsecase.
-func (b *blogPostUsecase) CreateBlog(ctx context.Context, blog *domain.BlogPost) (*domain.BlogPost, error) {
+func (b *blogPostUsecase) CreateBlog(ctx context.Context, blog *domain.BlogPost) (*domain.BlogPost, *domain.DomainError) {
 	// example implement
 	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
 	defer cancel()
@@ -22,7 +22,7 @@ func (b *blogPostUsecase) CreateBlog(ctx context.Context, blog *domain.BlogPost)
 }
 
 // DeleteBlog implements domain.BlogUsecase.
-func (b *blogPostUsecase) DeleteBlog(ctx context.Context, id string) error {
+func (b *blogPostUsecase) DeleteBlog(ctx context.Context, id string) *domain.DomainError {
 	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
 	defer cancel()
 
@@ -30,7 +30,7 @@ func (b *blogPostUsecase) DeleteBlog(ctx context.Context, id string) error {
 }
 
 // GetBlogs implements domain.BlogUsecase.
-func (b *blogPostUsecase) GetBlogs(ctx context.Context, filter *domain.BlogPostFilter) ([]domain.BlogPostsPage, error) {
+func (b *blogPostUsecase) GetBlogs(ctx context.Context, filter *domain.BlogPostFilter) ([]domain.BlogPostsPage, *domain.DomainError) {
 	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
 	defer cancel()
 
@@ -38,7 +38,7 @@ func (b *blogPostUsecase) GetBlogs(ctx context.Context, filter *domain.BlogPostF
 }
 
 // GetBlogByID implements domain.BlogUsecase.
-func (b *blogPostUsecase) GetBlogByID(ctx context.Context, id string) (*domain.BlogPost, error) {
+func (b *blogPostUsecase) GetBlogByID(ctx context.Context, id string) (*domain.BlogPost, *domain.DomainError) {
 	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
 	defer cancel()
 
@@ -46,7 +46,7 @@ func (b *blogPostUsecase) GetBlogByID(ctx context.Context, id string) (*domain.B
 }
 
 // UpdateBlog implements domain.BlogUsecase.
-func (b *blogPostUsecase) UpdateBlog(ctx context.Context, id string, blog domain.BlogPost) (domain.BlogPost, error) {
+func (b *blogPostUsecase) UpdateBlog(ctx context.Context, id string, blog domain.BlogPost) (domain.BlogPost, *domain.DomainError) {
 	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
 	defer cancel()
 

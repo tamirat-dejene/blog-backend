@@ -63,11 +63,11 @@ type BlogPostFilter struct {
 
 // Repository Interfaces provide an abstraction layer for data access operations related to blogs, comments, and user reactions.
 type BlogPostRepository interface {
-	Create(ctx context.Context, blog *BlogPost) (*BlogPost, error)
-	Update(ctx context.Context, id string, blog BlogPost) (BlogPost, error)
-	Delete(ctx context.Context, id string) error
-	Get(ctx context.Context, filter *BlogPostFilter) ([]BlogPostsPage, error)
-	GetBlogByID(ctx context.Context, id string) (*BlogPost, error)
+	Create(ctx context.Context, blog *BlogPost) (*BlogPost, *DomainError)
+	Update(ctx context.Context, id string, blog BlogPost) (BlogPost, *DomainError)
+	Delete(ctx context.Context, id string) *DomainError
+	Get(ctx context.Context, filter *BlogPostFilter) ([]BlogPostsPage, *DomainError)
+	GetBlogByID(ctx context.Context, id string) (*BlogPost, *DomainError)
 
 	//... more methods can be added based on the usecases
 }
@@ -88,11 +88,11 @@ type BlogUserReactionRepository interface {
 
 // Usecase Interfaces define the business logic for handling blogs, comments, and user reactions.
 type BlogPostUsecase interface {
-	GetBlogs(ctx context.Context, filter *BlogPostFilter) ([]BlogPostsPage, error)
-	GetBlogByID(ctx context.Context, id string) (*BlogPost, error)
-	CreateBlog(ctx context.Context, blog *BlogPost) (*BlogPost, error)
-	UpdateBlog(ctx context.Context, id string, blog BlogPost) (BlogPost, error)
-	DeleteBlog(ctx context.Context, id string) error
+	GetBlogs(ctx context.Context, filter *BlogPostFilter) ([]BlogPostsPage, *DomainError)
+	GetBlogByID(ctx context.Context, id string) (*BlogPost, *DomainError)
+	CreateBlog(ctx context.Context, blog *BlogPost) (*BlogPost, *DomainError)
+	UpdateBlog(ctx context.Context, id string, blog BlogPost) (BlogPost, *DomainError)
+	DeleteBlog(ctx context.Context, id string) *DomainError
 }
 
 type BlogCommentUsecase interface {

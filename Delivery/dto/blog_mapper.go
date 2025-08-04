@@ -6,10 +6,9 @@ import (
 )
 
 type BlogPostRequest struct {
-	Title    string   `json:"title" binding:"required"`
-	Content  string   `json:"content" binding:"required"`
-	AuthorID string   `json:"author_id" binding:"required"` // string, will convert to ObjectID in domain
-	Tags     []string `json:"tags"`
+	Title   string `json:"title" binding:"required"`
+	Content string `json:"content" binding:"required"`
+	Tags []string `json:"tags"`
 }
 
 type BlogPostResponse struct {
@@ -62,12 +61,11 @@ type ReactionQuery struct {
 	UserId string `form:"user_id" binding:"required"`
 }
 
-func ToDomainBlogPost(req BlogPostRequest) domain.BlogPost {
-	return domain.BlogPost{
-		Title:           req.Title,
-		Content:         req.Content,
-		AuthorID:        req.AuthorID,
-		Tags:            req.Tags,
+func (b *BlogPostRequest) ToDomain() *domain.BlogPost {
+	return &domain.BlogPost{
+		Title:           b.Title,
+		Content:         b.Content,
+		Tags:            b.Tags,
 		CreatedAt:       time.Now(),
 		UpdatedAt:       time.Now(),
 		Likes:           0,
@@ -77,22 +75,21 @@ func ToDomainBlogPost(req BlogPostRequest) domain.BlogPost {
 		PopularityScore: 0,
 	}
 }
-func FromDomainBlogPost(post *domain.BlogPost) BlogPostResponse {
-	return BlogPostResponse{
-		ID:              post.ID,
-		Title:           post.Title,
-		Content:         post.Content,
-		AuthorID:        post.AuthorID,
-		AuthorName:      post.AuthorName,
-		Tags:            post.Tags,
-		CreatedAt:       post.CreatedAt,
-		UpdatedAt:       post.UpdatedAt,
-		Likes:           post.Likes,
-		Dislikes:        post.Dislikes,
-		ViewCount:       post.ViewCount,
-		CommentCount:    post.CommentCount,
-		PopularityScore: post.PopularityScore,
-	}
+
+func (b *BlogPostResponse) Parse(blog *domain.BlogPost) {
+	b.ID = blog.ID
+	b.Title = blog.Title	
+	b.Content = blog.Content
+	b.AuthorID = blog.AuthorID
+	b.AuthorName = blog.AuthorName
+	b.Tags = blog.Tags
+	b.CreatedAt = blog.CreatedAt
+	b.UpdatedAt = blog.UpdatedAt
+	b.Likes = blog.Likes
+	b.Dislikes = blog.Dislikes
+	b.ViewCount = blog.ViewCount
+	b.CommentCount = blog.CommentCount
+	b.PopularityScore = blog.PopularityScore
 }
 
 func ToDomainBlogReaction(req BlogUserReactionRequest) domain.BlogUserReaction {
