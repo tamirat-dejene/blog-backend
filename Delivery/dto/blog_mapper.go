@@ -6,9 +6,9 @@ import (
 )
 
 type BlogPostRequest struct {
-	Title   string `json:"title" binding:"required"`
-	Content string `json:"content" binding:"required"`
-	Tags []string `json:"tags"`
+	Title   string   `json:"title" binding:"required"`
+	Content string   `json:"content" binding:"required"`
+	Tags    []string `json:"tags"`
 }
 
 type BlogPostResponse struct {
@@ -27,6 +27,12 @@ type BlogPostResponse struct {
 	PopularityScore int       `json:"popularity_score"` // computed popularity score
 }
 
+type BlogPostsPageResponse struct {
+	Blogs      []BlogPostResponse `json:"blogs"`
+	PageSize   int                `json:"page_size"`
+	PageNumber int                `json:"page_number"`
+}
+
 type BlogUserReactionRequest struct {
 	BlogID string `json:"blog_id" binding:"required"`
 	IsLike bool   `json:"is_like" binding:"required"`
@@ -41,8 +47,8 @@ type BlogUserReactionResponse struct {
 }
 
 type BlogCommentRequest struct {
-	BlogID   string `json:"blog_id"`
-	Comment  string `json:"comment"`
+	BlogID  string `json:"blog_id"`
+	Comment string `json:"comment"`
 }
 
 type BlogCommentResponse struct {
@@ -74,7 +80,7 @@ func (b *BlogPostRequest) ToDomain() *domain.BlogPost {
 
 func (b *BlogPostResponse) Parse(blog *domain.BlogPost) {
 	b.ID = blog.ID
-	b.Title = blog.Title	
+	b.Title = blog.Title
 	b.Content = blog.Content
 	b.AuthorID = blog.AuthorID
 	b.AuthorName = blog.AuthorName
@@ -106,8 +112,8 @@ func (r *BlogUserReactionResponse) Parse(reaction *domain.BlogUserReaction) {
 
 func (b *BlogCommentRequest) ToDomain() *domain.BlogComment {
 	return &domain.BlogComment{
-		BlogID:   b.BlogID,
-		Comment:  b.Comment,
+		BlogID:    b.BlogID,
+		Comment:   b.Comment,
 		CreatedAt: time.Now(),
 	}
 }
@@ -118,4 +124,14 @@ func (b *BlogCommentResponse) Parse(comment *domain.BlogComment) {
 	b.AuthorID = comment.AuthorID
 	b.Comment = comment.Comment
 	b.CreatedAt = comment.CreatedAt
+}
+
+func (pr *BlogPostsPageResponse) Parse(page *domain.BlogPostsPage) {
+	pr.PageSize = page.PageSize
+	pr.PageNumber = page.PageNumber
+	pr.Blogs = make([]BlogPostResponse, len(page.Blogs))
+	for i, blog := range page.Blogs {
+		pr.Blogs[i] = BlogPostResponse{}
+		pr.Blogs[i].Parse(&blog)
+	}
 }

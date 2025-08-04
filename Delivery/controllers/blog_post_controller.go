@@ -61,9 +61,18 @@ func (b *BlogPostController) GetBlogPosts(ctx *gin.Context) {
 		return
 	}
 
+	// Convert paginated blogs to response DTO
+	var response = make([]dto.BlogPostsPageResponse, len(paginated_blogs))
+	for idx, page := range paginated_blogs {
+		page_response := dto.BlogPostsPageResponse{}
+		page_response.Parse(&page)
+		response[idx] = page_response
+	}
+
+	// Return the response
 	ctx.JSON(http.StatusOK, domain.SuccessResponse{
 		Message: "Successfully retrieved blogs",
-		Data:    gin.H{"TotalPages": len(paginated_blogs), "Pages": paginated_blogs},
+		Data:    gin.H{"total_pages": len(paginated_blogs), "pages": response},
 	})
 }
 
