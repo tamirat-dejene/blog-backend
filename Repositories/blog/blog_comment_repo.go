@@ -6,6 +6,7 @@ import (
 	domain "g6/blog-api/Domain"
 	"g6/blog-api/Infrastructure/database/mongo"
 	"g6/blog-api/Infrastructure/database/mongo/mapper"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -23,6 +24,8 @@ func (b *blogCommentRepository) Create(ctx context.Context, comment domain.BlogC
 	if err != nil {
 		return &domain.BlogComment{}, err
 	}
+	blogComment.CreatedAt = time.Now()
+
 	_, err = b.db.Collection(b.collections.BlogComments).InsertOne(ctx, blogComment)
 
 	if err != nil {
@@ -77,7 +80,7 @@ func (b *blogCommentRepository) GetCommentsByBlogID(ctx context.Context, blogID 
 			Code: 400,
 		}
 	}
-	
+
 	var blogModel mapper.BlogPostModel
 	err = b.db.Collection(b.collections.BlogPosts).FindOne(ctx, bson.M{"_id": oid}).Decode(&blogModel)
 	if err != nil {
@@ -126,7 +129,19 @@ func (b *blogCommentRepository) GetCommentsByBlogID(ctx context.Context, blogID 
 
 // Update implements domain.BlogCommentRepository.
 func (b *blogCommentRepository) Update(ctx context.Context, id string, comment domain.BlogComment) (*domain.BlogComment, error) {
-	panic("unimplemented")
+	oid, err := primitive.ObjectIDFromHex(id)
+
+	if err != nil {
+		return &domain.BlogComment{}, err
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"comment": comment.Comment,
+		},
+	}
+	_, err = b.db.Collection(b.collections.BlogPosts).UpdateOne(ctx, oid, update)
+	return &domain.BlogComment{}, err
 }
 func NewBlogCommentRepository(db mongo.Database, collections *mongo.Collections) domain.BlogCommentRepository {
 	return &blogCommentRepository{
