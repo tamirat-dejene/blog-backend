@@ -16,7 +16,7 @@ import (
 
 type blogPostRepo struct {
 	db          mongo.Database
-	collections *collections
+	collections *mongo.Collections
 }
 
 // Create implements domain.BlogRepository.
@@ -103,7 +103,7 @@ func (b *blogPostRepo) Update(ctx context.Context, id string, blog domain.BlogPo
 	return domain.BlogPost{}, err
 }
 
-func NewBlogPostRepo(database mongo.Database, collections *collections) domain.BlogPostRepository {
+func NewBlogPostRepo(database mongo.Database, collections *mongo.Collections) domain.BlogPostRepository {
 	return &blogPostRepo{
 		db:          database,
 		collections: collections,

@@ -27,13 +27,20 @@ const (
 	RoleSuperAdmin UserRole = "superadmin"
 )
 
+type UserProfileUpdate struct {
+	FirstName  string
+	LastName   string
+	Bio        string
+	AvatarData []byte
+}
+
 type IUserUsecase interface {
 	FindByUsernameOrEmail(context.Context, string) (*User, error)
 	FindUserByID(string) (*User, error)
 	// GetUserByUsername(username string) (*User, error)
 	GetUserByEmail(email string) (*User, error)
 	UpdateUser(id string, user *User) (*User, error)
-	// DeleteUser(id primitive.ObjectID) error
+	UpdateProfile(userID string, update UserProfileUpdate, fileName string) (*User, error)
 	// GetAllUsers() ([]*User, error)
 
 	// anti

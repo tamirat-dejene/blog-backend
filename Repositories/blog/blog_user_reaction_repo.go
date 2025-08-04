@@ -13,10 +13,10 @@ import (
 
 type BlogUserReactionRepo struct {
 	db          mongo.Database
-	collections *collections
+	collections *mongo.Collections
 }
 
-func NewUserReactionRepo(database mongo.Database, collections *collections) domain.BlogUserReactionRepository {
+func NewUserReactionRepo(database mongo.Database, collections *mongo.Collections) domain.BlogUserReactionRepository {
 	return &BlogUserReactionRepo{
 		db:          database,
 		collections: collections,

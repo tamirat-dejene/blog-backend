@@ -10,7 +10,6 @@ import (
 )
 
 func Setup(env *bootstrap.Env, timeout time.Duration, db mongo.Database, router *gin.Engine) {
-	// homepage
 	router.GET("/", func(ctx *gin.Context) { ctx.Redirect(http.StatusPermanentRedirect, "/api") })
 
 	api := router.Group("/api")
@@ -20,6 +19,6 @@ func Setup(env *bootstrap.Env, timeout time.Duration, db mongo.Database, router 
 		NewBlogRoutes(env, api, db)
 		NewBlogCommentRoutes(env, api, db)
 		NewBlogUserReactionRoutes(env, api, db)
-		// Add more routes as needed
+		NewBlogAIRoutes(env, api, db)
 	}
 }

@@ -43,6 +43,7 @@ func AuthMiddleware(env bootstrap.Env) gin.HandlerFunc {
 		if role, ok := claims["role"]; ok {
 			c.Set("role", role.(string))
 		}
+
 		c.Next()
 	}
 }

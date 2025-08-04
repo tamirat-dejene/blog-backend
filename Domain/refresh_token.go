@@ -26,9 +26,10 @@ type RefreshToken struct {
 }
 
 type RefreshTokenResponse struct {
-	AccessToken  string
-	RefreshToken string
-	ExpiresAt    time.Time
+	AccessToken           string
+	RefreshToken          string
+	RefreshTokenExpiresAt time.Time
+	AccessTokenExpiresAt  time.Time
 }
 
 type IAuthService interface {

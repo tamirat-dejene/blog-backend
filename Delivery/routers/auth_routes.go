@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"g6/blog-api/Infrastructure/email"
+	"g6/blog-api/Infrastructure/middleware"
 	"g6/blog-api/Infrastructure/security"
+	"g6/blog-api/Infrastructure/storage"
 
 	"g6/blog-api/Infrastructure/database/mongo"
 
@@ -16,6 +18,10 @@ import (
 )
 
 func NewAuthRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Database) {
+	// context time out
+	ctxTimeout := time.Duration(env.CtxTSeconds) * time.Second
+
+	// jwt services
 	authService := security.NewJWTService(
 		env.ATS,
 		env.RTS,
@@ -46,8 +52,15 @@ func NewAuthRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Database) 
 		time.Duration(env.PasswordResetExpiry)*time.Minute,
 	)
 
+	// storage services
+	imageKitStorageService := storage.NewImageKitStorage(
+		env.ImageKitPrivateKey,
+		env.ImageKitPrivateKey,
+		env.ImageKitEndpoint,
+	)
+
 	authController := controllers.AuthController{
-		UserUsecase:          usercase.NewUserUsecase(repositories.NewUserRepository(db, env.UserCollection), time.Duration(env.CtxTSeconds)*time.Second),
+		UserUsecase:          usercase.NewUserUsecase(userRepo, imageKitStorageService, ctxTimeout),
 		AuthService:          authService,
 		RefreshTokenUsecase:  usercase.NewRefreshTokenUsecase(repositories.NewRefreshTokenRepository(db, env.RefreshTokenCollection)),
 		PasswordResetUsecase: passwordResetUsecase,
@@ -61,6 +74,7 @@ func NewAuthRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Database) 
 		auth.POST("/forgot-password", authController.ForgotPasswordRequest)
 		auth.POST("/reset-password", authController.ResetPasswordRequest)
 		auth.POST("/refresh", authController.RefreshToken)
+		auth.PATCH("/change-role", middleware.AuthMiddleware(*env), authController.ChangeRoleRequest)
 	}
 
 }

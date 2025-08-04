@@ -7,7 +7,7 @@ Built with **Go** using **Clean Architecture**.
 - CRUD for blog posts
 - User authentication and role-based access
 - Blog filtering and search
-- AI-powered content suggestions (planned)
+- AI-powered content suggestions
 
 ## 🗂 Tech Stack
 - Go (Gin, MongoDB driver)

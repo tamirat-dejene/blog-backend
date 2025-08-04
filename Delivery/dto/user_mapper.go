@@ -32,6 +32,7 @@ type UserResponse struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+// user registration request mapper
 func ToDomainUser(req UserRequest) domain.User {
 	return domain.User{
 		Username:  req.Username,
@@ -69,4 +70,12 @@ func ToUserResponseList(users []*domain.User) []UserResponse {
 		responses = append(responses, ToUserResponse(*user))
 	}
 	return responses
+}
+
+// / 	USER UPDATE REQUEST
+// user update profile request
+type UserUpdateProfileRequest struct {
+	Bio       string `form:"bio" validate:"omitempty,max=500"`
+	FirstName string `form:"first_name" validate:"omitempty,alpha,min=2,max=50"`
+	LastName  string `form:"last_name" validate:"omitempty,alpha,min=2,max=50"`
 }

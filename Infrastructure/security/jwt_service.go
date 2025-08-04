@@ -51,9 +51,10 @@ func (s *JwtService) GenerateTokens(user domain.User) (domain.RefreshTokenRespon
 	}
 
 	return domain.RefreshTokenResponse{
-		AccessToken:  accessTokenStr,
-		RefreshToken: refreshTokenStr,
-		ExpiresAt:    time.Now().Add(s.RefreshExpiry),
+		AccessToken:           accessTokenStr,
+		RefreshToken:          refreshTokenStr,
+		RefreshTokenExpiresAt: time.Now().Add(s.RefreshExpiry),
+		AccessTokenExpiresAt:  time.Now().Add(s.AccessExpiry),
 	}, nil
 }
 

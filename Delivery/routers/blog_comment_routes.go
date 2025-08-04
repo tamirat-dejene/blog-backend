@@ -5,19 +5,24 @@ import (
 	"g6/blog-api/Delivery/controllers"
 	"g6/blog-api/Infrastructure/database/mongo"
 	repository "g6/blog-api/Repositories/blog"
+	usecases "g6/blog-api/Usecases"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 func NewBlogCommentRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Database) {
 	comment_controller := controllers.BlogCommentController{
-		CommentRepo: repository.NewBlogCommentRepository(
-			db,
-			repository.NewCollections(
-				env.BlogCommentCollection,
-				env.BlogPostCollection,
-				env.BlogUserReactionCollection,
+		BlogCommentUsecase: usecases.NewBlogCommentUsecase(
+			repository.NewBlogCommentRepository(
+				db,
+				&mongo.Collections{
+					BlogPosts:         env.BlogPostCollection,
+					BlogComments:      env.BlogCommentCollection,
+					BlogUserReactions: env.BlogUserReactionCollection,
+				},
 			),
+			time.Duration(env.CtxTSeconds) * time.Second,
 		),
 		Env: env,
 	}
