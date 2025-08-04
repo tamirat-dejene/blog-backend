@@ -81,9 +81,9 @@ type BlogCommentRepository interface {
 }
 
 type BlogUserReactionRepository interface {
-	Create(ctx context.Context, reaction BlogUserReaction) (BlogUserReaction, error)
-	Delete(ctx context.Context, id string) error
-	GetUserReaction(ctx context.Context, blogID, userID string) (BlogUserReaction, error)
+	Create(ctx context.Context, reaction *BlogUserReaction) (*BlogUserReaction, *DomainError)
+	Delete(ctx context.Context, id string) *DomainError
+	GetUserReaction(ctx context.Context, blogID, userID string) (*BlogUserReaction, *DomainError)
 }
 
 // Usecase Interfaces define the business logic for handling blogs, comments, and user reactions.
@@ -104,7 +104,7 @@ type BlogCommentUsecase interface {
 }
 
 type BlogUserReactionUsecase interface {
-	CreateReaction(ctx context.Context, reaction BlogUserReaction) (BlogUserReaction, error)
-	DeleteReaction(ctx context.Context, id string) error
-	GetUserReaction(ctx context.Context, blogID, userID string) (BlogUserReaction, error)
+	CreateReaction(ctx context.Context, reaction *BlogUserReaction) (*BlogUserReaction, *DomainError)
+	DeleteReaction(ctx context.Context, id string) *DomainError
+	GetUserReaction(ctx context.Context, blogID, userID string) (*BlogUserReaction, *DomainError)
 }

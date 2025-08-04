@@ -28,9 +28,8 @@ type BlogPostResponse struct {
 }
 
 type BlogUserReactionRequest struct {
-	UserID string `json:"user_id" binding:"required"`
 	BlogID string `json:"blog_id" binding:"required"`
-	IsLike bool   `json:"is_like"`
+	IsLike bool   `json:"is_like" binding:"required"`
 }
 
 type BlogUserReactionResponse struct {
@@ -56,7 +55,6 @@ type BlogCommentResponse struct {
 
 type ReactionQuery struct {
 	BlogId string `form:"blog_id" binding:"required"`
-	UserId string `form:"user_id" binding:"required"`
 }
 
 func (b *BlogPostRequest) ToDomain() *domain.BlogPost {
@@ -90,23 +88,20 @@ func (b *BlogPostResponse) Parse(blog *domain.BlogPost) {
 	b.PopularityScore = blog.PopularityScore
 }
 
-func ToDomainBlogReaction(req BlogUserReactionRequest) domain.BlogUserReaction {
-	return domain.BlogUserReaction{
-		UserID:    req.UserID,
-		BlogID:    req.BlogID,
+func (r *BlogUserReactionRequest) ToDomain() *domain.BlogUserReaction {
+	return &domain.BlogUserReaction{
+		BlogID:    r.BlogID,
+		IsLike:    r.IsLike,
 		CreatedAt: time.Now(),
-		IsLike:    req.IsLike,
 	}
 }
 
-func FromDomainBlogReaction(response domain.BlogUserReaction) BlogUserReactionResponse {
-	return BlogUserReactionResponse{
-		ID:        response.ID,
-		BlogID:    response.BlogID,
-		UserID:    response.UserID,
-		CreatedAt: response.CreatedAt,
-		IsLike:    response.IsLike,
-	}
+func (r *BlogUserReactionResponse) Parse(reaction *domain.BlogUserReaction) {
+	r.ID = reaction.ID
+	r.BlogID = reaction.BlogID
+	r.UserID = reaction.UserID
+	r.IsLike = reaction.IsLike
+	r.CreatedAt = reaction.CreatedAt
 }
 
 func (b *BlogCommentRequest) ToDomain() *domain.BlogComment {

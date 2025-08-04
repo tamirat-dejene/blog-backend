@@ -15,51 +15,93 @@ type BlogReactionController struct {
 }
 
 func (b *BlogReactionController) CreateReaction(ctx *gin.Context) {
+	// Bind the request to the DTO
 	var req dto.BlogUserReactionRequest
 
 	if err := ctx.ShouldBind(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: "Invalid request data",
+			Error:   err.Error(),
+		})
+		return
 	}
-	reaction := dto.ToDomainBlogReaction(req)
 
-	createdReaction, err := b.BlogUserReactionUsecase.CreateReaction(ctx, reaction)
+	// Convert the DTO to the domain model
+	createdReaction, err := b.BlogUserReactionUsecase.CreateReaction(ctx, req.ToDomain())
 
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.JSON(err.Code, domain.ErrorResponse{
+			Message: "Failed to create reaction",
+			Error:   err.Err.Error(),
+			Code:    err.Code,
+		})
+		return
 	}
-	ctx.JSON(http.StatusCreated, createdReaction)
+
+	// Convert the domain model back to the response DTO
+	var response dto.BlogUserReactionResponse
+	response.Parse(createdReaction)
+	ctx.JSON(http.StatusCreated, response)
 }
 
 func (b *BlogReactionController) DeleteReaction(ctx *gin.Context) {
-	id := ctx.Param("id")
-
-	err := b.BlogUserReactionUsecase.DeleteReaction(ctx, id)
-
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	// Extract the ID from the URL parameters
+	if ctx.Param("id") == "" {
+		ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: "Reaction ID is required",
+			Error:   "Missing reaction ID in request",
+		})
+		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"message": "Successfully deleted"})
+
+	// Call the use case to delete the reaction
+	err := b.BlogUserReactionUsecase.DeleteReaction(ctx, ctx.Param("id"))
+	if err != nil {
+		ctx.JSON(err.Code, domain.ErrorResponse{
+			Message: "Failed to delete reaction",
+			Error:   err.Err.Error(),
+			Code:    err.Code,
+		})
+		return
+	}
+
+	// If successful, return a success message
+	ctx.JSON(http.StatusOK, domain.SuccessResponse{
+		Message: "Reaction deleted successfully",
+		Data:    nil,
+	})
 }
 
 func (b *BlogReactionController) GetUserReaction(ctx *gin.Context) {
+	// Bind the query parameters to the DTO
 	var query dto.ReactionQuery
-
 	if err := ctx.ShouldBindQuery(&query); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: "Invalid query parameters",
+			Error:   err.Error(),
+		})
 		return
 	}
 
-	reaction, err := b.BlogUserReactionUsecase.GetUserReaction(ctx, query.BlogId, query.UserId)
+	// Call the use case to get the user reaction
+	reaction, err := b.BlogUserReactionUsecase.GetUserReaction(ctx, query.BlogId, ctx.GetString("user_id"))
+
 
 	if err != nil {
-		if err.Error() == "no reaction found" {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": "Reaction not found"})
-		} else {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		}
+		ctx.JSON(err.Code, domain.ErrorResponse{
+			Message: "Failed to retrieve user reaction",
+			Error:   err.Err.Error(),
+			Code:    err.Code,
+		})
 		return
 	}
-	response := dto.FromDomainBlogReaction(reaction)
+	// Convert the domain model to the response DTO
+	var response dto.BlogUserReactionResponse
+	response.Parse(reaction)
 
-	ctx.JSON(http.StatusOK, response)
+	// Return the response
+	ctx.JSON(http.StatusOK, domain.SuccessResponse{
+		Message: "User reaction retrieved successfully",
+		Data:    response,
+	})
 }
