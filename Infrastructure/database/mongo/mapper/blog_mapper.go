@@ -82,75 +82,30 @@ func (b *BlogPostModel) ToDomain() *domain.BlogPost {
 	}
 }
 
-// Convert from domain
-func BlogFromDomain(blog *domain.BlogPost) (*BlogPostModel, error) {
-	authorID, err := primitive.ObjectIDFromHex(blog.AuthorID)
-	if err != nil {
-		return nil, err
-	}
-
-	var objectID primitive.ObjectID
-	if blog.ID != "" {
-		objectID, err = primitive.ObjectIDFromHex(blog.ID)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		objectID = primitive.NewObjectID()
-	}
-
-	return &BlogPostModel{
-		ID:        objectID,
-		Title:     blog.Title,
-		Content:   blog.Content,
-		AuthorID:  authorID,
-		Tags:      blog.Tags,
-		CreatedAt: blog.CreatedAt,
-		UpdatedAt: blog.UpdatedAt,
-		Likes:     blog.Likes,
-		Dislikes:  blog.Dislikes,
-		ViewCount: blog.ViewCount,
-	}, nil
-}
-
-// Convert BlogCommentModel to domain.BlogComment
-func BlogCommentToDomain(comment *BlogCommentModel) *domain.BlogComment {
-	return &domain.BlogComment{
-		ID:        comment.ID.Hex(),
-		BlogID:    comment.BlogID.Hex(),
-		AuthorID:  comment.AuthorID.Hex(),
-		Comment:   comment.Comment,
-		CreatedAt: comment.CreatedAt,
-	}
-}
-
-// Convert domain.BlogComment to BlogCommentModel
-func BlogCommentFromDomain(comment *domain.BlogComment) (*BlogCommentModel, error) {
+func (c *BlogCommentModel) Parse(comment *domain.BlogComment) error {
+	c.Comment = comment.Comment
 	blogID, err := primitive.ObjectIDFromHex(comment.BlogID)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("invalid blog ID: %w", err)
 	}
+	c.BlogID = blogID
 	authorID, err := primitive.ObjectIDFromHex(comment.AuthorID)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("invalid author ID: %w", err)
 	}
+	c.AuthorID = authorID
+	c.CreatedAt = comment.CreatedAt
+	return nil
+}
 
-	var objectID primitive.ObjectID
-	if comment.ID != "" {
-		objectID, err = primitive.ObjectIDFromHex(comment.ID)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		objectID = primitive.NewObjectID()
+func (c *BlogCommentModel) ToDomain() *domain.BlogComment {
+	return &domain.BlogComment{
+		ID:        c.ID.Hex(),
+		BlogID:    c.BlogID.Hex(),
+		AuthorID:  c.AuthorID.Hex(),
+		Comment:   c.Comment,
+		CreatedAt: c.CreatedAt,
 	}
-
-	return &BlogCommentModel{
-		ID:       objectID,
-		BlogID:   blogID,
-		AuthorID: authorID,
-		Comment:  comment.Comment,
-	}, nil
 }
 
 // Convert to domain

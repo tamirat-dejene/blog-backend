@@ -11,14 +11,14 @@ type blogCommentUsecase struct {
 	ctxtimeout  time.Duration
 }
 
-func (b *blogCommentUsecase) CreateComment(ctx context.Context, comment domain.BlogComment) (*domain.BlogComment, error) {
+func (b *blogCommentUsecase) CreateComment(ctx context.Context, comment *domain.BlogComment) (*domain.BlogComment, *domain.DomainError) {
 	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
 	defer cancel()
 
 	return b.commentRepo.Create(c, comment)
 }
 
-func (b *blogCommentUsecase) DeleteComment(ctx context.Context, id string) error {
+func (b *blogCommentUsecase) DeleteComment(ctx context.Context, id string) *domain.DomainError {
 	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
 	defer cancel()
 
@@ -57,17 +57,11 @@ func (b *blogCommentUsecase) GetCommentsByBlogID(ctx context.Context, blogID str
 }
 
 // UpdateComment implements domain.BlogCommentUsecase.
-func (b *blogCommentUsecase) UpdateComment(ctx context.Context, id string, comment domain.BlogComment) (*domain.BlogComment, error) {
+func (b *blogCommentUsecase) UpdateComment(ctx context.Context, id string, comment *domain.BlogComment) (*domain.BlogComment, *domain.DomainError) {
 	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
 	defer cancel()
 
-	updatedComment, err := b.commentRepo.Update(c, id, comment)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return updatedComment, nil
+	return b.commentRepo.Update(c, id, comment)
 }
 
 func NewBlogCommentUsecase(commentRepo domain.BlogCommentRepository, timeout time.Duration) domain.BlogCommentUsecase {

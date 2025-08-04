@@ -42,9 +42,7 @@ type BlogUserReactionResponse struct {
 }
 
 type BlogCommentRequest struct {
-	ID       string `json:"id"`
 	BlogID   string `json:"blog_id"`
-	AuthorID string `json:"author_id"`
 	Comment  string `json:"comment"`
 }
 
@@ -111,21 +109,18 @@ func FromDomainBlogReaction(response domain.BlogUserReaction) BlogUserReactionRe
 	}
 }
 
-func ToDomainBlogComment(req BlogCommentRequest) domain.BlogComment {
-	return domain.BlogComment{
-		ID:       req.ID,
-		BlogID:   req.BlogID,
-		AuthorID: req.AuthorID,
-		Comment:  req.Comment,
+func (b *BlogCommentRequest) ToDomain() *domain.BlogComment {
+	return &domain.BlogComment{
+		BlogID:   b.BlogID,
+		Comment:  b.Comment,
+		CreatedAt: time.Now(),
 	}
 }
 
-func FromDomainBlogComment(response domain.BlogComment) BlogCommentResponse {
-	return BlogCommentResponse{
-		ID:        response.ID,
-		BlogID:    response.BlogID,
-		AuthorID:  response.AuthorID,
-		Comment:   response.Comment,
-		CreatedAt: response.CreatedAt,
-	}
+func (b *BlogCommentResponse) Parse(comment *domain.BlogComment) {
+	b.ID = comment.ID
+	b.BlogID = comment.BlogID
+	b.AuthorID = comment.AuthorID
+	b.Comment = comment.Comment
+	b.CreatedAt = comment.CreatedAt
 }
