@@ -15,3 +15,6 @@ packages:
   "g6/blog-api/Infrastructure/database/mongo":
     config:
       all: true
+  "g6/blog-api/Domain":
+    config:
+      all: true
