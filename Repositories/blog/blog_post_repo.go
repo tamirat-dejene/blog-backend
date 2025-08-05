@@ -66,7 +66,12 @@ func (b *blogPostRepo) Delete(ctx context.Context, id string) *domain.DomainErro
 		}
 	}
 	_, err = b.db.Collection(b.collections.BlogPosts).DeleteOne(ctx, bson.M{"_id": oid})
-	if err != nil {
+	if err == mongo.ErrNoDocuments() {
+		return &domain.DomainError{
+			Err:  fmt.Errorf("blog post with ID %s not found", id),
+			Code: http.StatusNotFound,
+		}
+	} else if err != nil {
 		return &domain.DomainError{
 			Err:  err,
 			Code: http.StatusInternalServerError,
