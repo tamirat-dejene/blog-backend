@@ -148,7 +148,7 @@ func (b *blogPostRepo) GetBlogByID(ctx context.Context, id string) (*domain.Blog
 			Code: http.StatusNotFound,
 		}
 	}
-	
+
 	// Calculate the popularity score
 	ps := utils.CalculatePopularityScore(blogModel.Likes, blogModel.ViewCount, blogModel.CommentCount, blogModel.Dislikes)
 	_, err = b.db.Collection(b.collections.BlogPosts).UpdateOne(ctx, bson.M{"_id": oid}, bson.M{
@@ -196,7 +196,7 @@ func (b *blogPostRepo) Update(ctx context.Context, id string, blog domain.BlogPo
 		},
 	}
 
-	_, err = b.db.Collection(b.collections.BlogPosts).UpdateOne(ctx, oid, update)
+	_, err = b.db.Collection(b.collections.BlogPosts).UpdateOne(ctx, bson.M{"_id": oid}, update)
 	if err != nil {
 		return domain.BlogPost{}, &domain.DomainError{
 			Err:  err,
