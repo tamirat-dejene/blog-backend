@@ -56,6 +56,11 @@ type Env struct {
 	ImageKitPrivateKey string `mapstructure:"IMAGEKIT_PRIVATE_KEY"`
 	ImageKitPublicKey  string `mapstructure:"IMAGEKIT_PUBLIC_KEY"`
 	ImageKitEndpoint   string `mapstructure:"IMAGEKIT_URL_ENDPOINT"`
+
+	// Google OAuth2 Configuration
+	GoogleClientID     string `mapstructure:"GOOGLE_CLIENT_ID"`
+	GoogleClientSecret string `mapstructure:"GOOGLE_CLIENT_SECRET"`
+	GoogleRedirectURL  string `mapstructure:"GOOGLE_REDIRECT_URL"`
 }
 
 // Viper can be made injectable
