@@ -8,6 +8,7 @@ import (
 	"g6/blog-api/Infrastructure/database/mongo"
 	"g6/blog-api/Infrastructure/database/mongo/mapper"
 	"g6/blog-api/Infrastructure/database/mongo/utils"
+	"g6/blog-api/Infrastructure/redis"
 	"net/http"
 
 	"time"
@@ -18,6 +19,7 @@ import (
 
 type blogPostRepo struct {
 	db          mongo.Database
+	redisClient redis.RedisClient
 	collections *mongo.Collections
 }
 
@@ -82,6 +84,26 @@ func (b *blogPostRepo) Delete(ctx context.Context, id string) *domain.DomainErro
 
 // Get implements domain.BlogRepository.
 func (b *blogPostRepo) Get(ctx context.Context, filter *domain.BlogPostFilter) ([]domain.BlogPostsPage, *domain.DomainError) {
+	// generate the Redis key
+	redis_service := &redis.RedisService{}
+	redis_key := redis_service.GenerateRedisKey(filter)
+
+	// Check the redis cache first
+	pages, err := b.redisClient.Get(ctx, redis_key)
+	if err == nil && pages != "" {
+		fmt.Println("Cache hit for key:", redis_key)
+		page_models, err := utils.DeserializeBlogPostsPage(pages)
+		if err != nil {
+			return nil, &domain.DomainError{
+				Err:  errors.New("failed to deserialize blog posts page"),
+				Code: http.StatusInternalServerError,
+			}
+		}
+
+		return utils.PaginateBlogs(page_models, filter.PageSize), nil
+	}
+	fmt.Println("Cache miss for key:", redis_key)
+
 	collection := b.db.Collection(b.collections.BlogPosts)
 	pipeline := utils.BuildBlogRetrievalAggregationPipeline(filter)
 
@@ -101,6 +123,16 @@ func (b *blogPostRepo) Get(ctx context.Context, filter *domain.BlogPostFilter) (
 			Code: http.StatusInternalServerError,
 		}
 	}
+
+	serialized, err := utils.SerializeBlogPostsPage(dbResults)
+	if err != nil {
+		return nil, &domain.DomainError{
+			Err:  errors.New("failed to serialize blog posts page"),
+			Code: http.StatusInternalServerError,
+		}
+	}
+
+	b.redisClient.Set(ctx, redis_key, serialized, b.redisClient.GetCacheExpiry())
 
 	return utils.PaginateBlogs(dbResults, filter.PageSize), nil
 }
@@ -148,7 +180,7 @@ func (b *blogPostRepo) GetBlogByID(ctx context.Context, id string) (*domain.Blog
 			Code: http.StatusNotFound,
 		}
 	}
-	
+
 	// Calculate the popularity score
 	ps := utils.CalculatePopularityScore(blogModel.Likes, blogModel.ViewCount, blogModel.CommentCount, blogModel.Dislikes)
 	_, err = b.db.Collection(b.collections.BlogPosts).UpdateOne(ctx, bson.M{"_id": oid}, bson.M{
@@ -209,9 +241,10 @@ func (b *blogPostRepo) Update(ctx context.Context, id string, blog domain.BlogPo
 	return blog, nil
 }
 
-func NewBlogPostRepo(database mongo.Database, collections *mongo.Collections) domain.BlogPostRepository {
+func NewBlogPostRepo(database mongo.Database, redisClient redis.RedisClient, collections *mongo.Collections) domain.BlogPostRepository {
 	return &blogPostRepo{
 		db:          database,
 		collections: collections,
+		redisClient: redisClient,
 	}
 }

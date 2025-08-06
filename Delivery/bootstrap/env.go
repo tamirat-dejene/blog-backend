@@ -56,6 +56,15 @@ type Env struct {
 	ImageKitPrivateKey string `mapstructure:"IMAGEKIT_PRIVATE_KEY"`
 	ImageKitPublicKey  string `mapstructure:"IMAGEKIT_PUBLIC_KEY"`
 	ImageKitEndpoint   string `mapstructure:"IMAGEKIT_URL_ENDPOINT"`
+
+	// Redis configuration
+	RedisHost     string `mapstructure:"REDIS_HOST"`
+	RedisPort     int    `mapstructure:"REDIS_PORT"`
+	RedisPassword string `mapstructure:"REDIS_PASSWORD"`
+	RedisDB       int    `mapstructure:"REDIS_DB"`
+
+	// Redis cache configuration
+	CacheExpirationSeconds int `mapstructure:"CACHE_EXPIRATION_SECONDS"` // in seconds
 }
 
 // Viper can be made injectable

@@ -111,3 +111,36 @@ func PaginateBlogs(blogs []mapper.BlogPostModel, pageSize int) []domain.BlogPost
 
 	return pages
 }
+
+// DecerializeBlogPostsPage converts a serialized string into a slice of BlogPostsPage.
+func DeserializeBlogPostsPage(serialized string) ([]mapper.BlogPostModel, error) {
+	// Define a wrapper matching the serialized structure
+	var wrapper struct {
+		Pages []mapper.BlogPostModel `bson:"pages"`
+	}
+
+	err := bson.UnmarshalExtJSON([]byte(serialized), false, &wrapper)
+	if err != nil {
+		return nil, err
+	}
+
+	return wrapper.Pages, nil
+}
+
+// SerializeBlogPostsPage converts a slice of BlogPostModel into a serialized string.
+func SerializeBlogPostsPage(pages []mapper.BlogPostModel) (string, error) {
+	if len(pages) == 0 {
+		return "", nil // return empty string if no pages to serialize
+	}
+
+	// Wrap the slice in a top-level document
+	wrapped := bson.M{"pages": pages}
+
+	// Serialize to Extended JSON
+	serialized, err := bson.MarshalExtJSON(wrapped, false, false)
+	if err != nil {
+		return "", err
+	}
+
+	return string(serialized), nil
+}
