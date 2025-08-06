@@ -6,17 +6,18 @@ import (
 )
 
 type User struct {
-	ID        string
-	Username  string
-	Email     string
-	FirstName string
-	LastName  string
-	Password  string
-	Role      UserRole
-	Bio       string
-	AvatarURL string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID         string
+	Username   string
+	Email      string
+	FirstName  string
+	LastName   string
+	Password   string
+	Role       UserRole
+	Bio        string
+	AvatarURL  string
+	IsVerified bool
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
 
 type UserRole string

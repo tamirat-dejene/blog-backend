@@ -56,6 +56,12 @@ type Env struct {
 	ImageKitPrivateKey string `mapstructure:"IMAGEKIT_PRIVATE_KEY"`
 	ImageKitPublicKey  string `mapstructure:"IMAGEKIT_PUBLIC_KEY"`
 	ImageKitEndpoint   string `mapstructure:"IMAGEKIT_URL_ENDPOINT"`
+
+	// OTP secret salt
+	SecretSalt         string `mapstructure:"MY_SUPER_SECRET_SALT"`
+	OtpCollection      string `mapstructure:"OTP_COLLECTION"`
+	OtpExpireMinutes   int    `mapstructure:"OTP_EXPIRE_MINUTES"`
+	OtpMaximumAttempts int    `mapstructure:"OTP_MAXIMUM_ATTEMPTS"`
 }
 
 // Viper can be made injectable
