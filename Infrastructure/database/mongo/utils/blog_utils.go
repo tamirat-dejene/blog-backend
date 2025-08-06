@@ -144,3 +144,27 @@ func SerializeBlogPostsPage(pages []mapper.BlogPostModel) (string, error) {
 
 	return string(serialized), nil
 }
+
+// DeserializeBlogPost converts a serialized string into a BlogPostModel.
+func DeserializeBlogPost(serialized string) (*mapper.BlogPostModel, error) {
+	var blogModel mapper.BlogPostModel
+	err := bson.UnmarshalExtJSON([]byte(serialized), false, &blogModel)
+	if err != nil {
+		return nil, err
+	}
+	return &blogModel, nil
+}
+
+// SerializeBlogPost converts a BlogPostModel into a serialized string.
+func SerializeBlogPost(blog *mapper.BlogPostModel) (string, error) {
+	if blog == nil {
+		return "", nil // return empty string if no blog to serialize
+	}
+
+	serialized, err := bson.MarshalExtJSON(blog, false, false)
+	if err != nil {
+		return "", err
+	}
+
+	return string(serialized), nil
+}

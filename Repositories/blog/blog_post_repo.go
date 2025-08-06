@@ -79,6 +79,16 @@ func (b *blogPostRepo) Delete(ctx context.Context, id string) *domain.DomainErro
 			Code: http.StatusInternalServerError,
 		}
 	}
+
+	// Invalidate the cache for this blog post
+	redis_service := &redis.RedisService{}
+	redis_key := redis_service.GenerateBlogPostKey(id)
+	if err := b.redisClient.Delete(ctx, redis_key); err != nil {
+		return &domain.DomainError{
+			Err:  errors.New("failed to delete blog post from cache"),
+			Code: http.StatusInternalServerError,
+		}
+	}
 	return nil
 }
 
@@ -146,18 +156,34 @@ func (b *blogPostRepo) GetBlogByID(ctx context.Context, id string) (*domain.Blog
 			Code: http.StatusBadRequest,
 		}
 	}
+	// Check the Redis cache first
+	var blogModel *mapper.BlogPostModel
+	redis_service := &redis.RedisService{}
+	redis_key := redis_service.GenerateBlogPostKey(id)
 
-	var blogModel mapper.BlogPostModel
-	err = b.db.Collection(b.collections.BlogPosts).FindOne(ctx, bson.M{"_id": oid}).Decode(&blogModel)
-	if err == mongo.ErrNoDocuments() {
-		return nil, &domain.DomainError{
-			Err:  err,
-			Code: http.StatusNotFound,
+	value, err := b.redisClient.Get(ctx, redis_key)
+	if err == nil && value != "" {
+		fmt.Println("Cache hit for key:", redis_key)
+		blogModel, err = utils.DeserializeBlogPost(value)
+		if err != nil {
+			return nil, &domain.DomainError{
+				Err:  errors.New("failed to deserialize blog post"),
+				Code: http.StatusInternalServerError,
+			}
 		}
-	} else if err != nil {
-		return nil, &domain.DomainError{
-			Err:  err,
-			Code: http.StatusInternalServerError,
+	} else {
+		fmt.Println("Cache miss for key:", redis_key)
+		err = b.db.Collection(b.collections.BlogPosts).FindOne(ctx, bson.M{"_id": oid}).Decode(&blogModel)
+		if err == mongo.ErrNoDocuments() {
+			return nil, &domain.DomainError{
+				Err:  err,
+				Code: http.StatusNotFound,
+			}
+		} else if err != nil {
+			return nil, &domain.DomainError{
+				Err:  err,
+				Code: http.StatusInternalServerError,
+			}
 		}
 	}
 
@@ -202,6 +228,21 @@ func (b *blogPostRepo) GetBlogByID(ctx context.Context, id string) (*domain.Blog
 		}
 	}
 
+	// Cache the blog post
+	serialized, err := utils.SerializeBlogPost(blogModel)
+	if err != nil {
+		return nil, &domain.DomainError{
+			Err:  errors.New("failed to serialize blog post"),
+			Code: http.StatusInternalServerError,
+		}
+	}
+	if err := b.redisClient.Set(ctx, redis_key, serialized, b.redisClient.GetCacheExpiry()); err != nil {
+		return nil, &domain.DomainError{
+			Err:  errors.New("failed to cache blog post"),
+			Code: http.StatusInternalServerError,
+		}
+	}
+
 	// Set the ID back to the domain model
 	blog.ID = blogModel.ID.Hex()
 	return blog, nil
@@ -232,6 +273,16 @@ func (b *blogPostRepo) Update(ctx context.Context, id string, blog domain.BlogPo
 	if err != nil {
 		return domain.BlogPost{}, &domain.DomainError{
 			Err:  err,
+			Code: http.StatusInternalServerError,
+		}
+	}
+
+	// Reset the cache for this blog post
+	redis_service := &redis.RedisService{}
+	redis_key := redis_service.GenerateBlogPostKey(id)
+	if err := b.redisClient.Delete(ctx, redis_key); err != nil {
+		return domain.BlogPost{}, &domain.DomainError{
+			Err:  errors.New("failed to delete blog post from cache"),
 			Code: http.StatusInternalServerError,
 		}
 	}
