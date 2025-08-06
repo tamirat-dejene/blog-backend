@@ -2,11 +2,13 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	domain "g6/blog-api/Domain"
 	"g6/blog-api/Infrastructure/database/mongo"
 	"g6/blog-api/Infrastructure/database/mongo/mapper"
 	mongo_mocks "g6/blog-api/Infrastructure/database/mongo/mocks"
 	"g6/blog-api/Infrastructure/database/mongo/utils"
+	"net/http"
 	"testing"
 	"time"
 
@@ -272,6 +274,62 @@ func TestUserReaction_Create_ExistingDifferentType(t *testing.T) {
 	assert.NotNil(t, result)
 	assert.Equal(t, existingReactionID.Hex(), result.ID, "Returned ID should match existing reaction ID")
 	assert.Equal(t, false, result.IsLike, "IsLike should be updated to false in the returned result")
+
+	mock_db.AssertExpectations(t)
+	mock_reactions_collection.AssertExpectations(t)
+	mock_posts_collection.AssertExpectations(t)
+}
+
+func TestUserReaction_Create_InsertFail(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.TODO()
+	mock_db := new(mongo_mocks.MockDatabase)
+	mock_reactions_collection := new(mongo_mocks.MockCollection)
+	mock_posts_collection := new(mongo_mocks.MockCollection)
+
+	BlogUserReactionCollection := "test_blog_user_reaction"
+	BlogPostCollection := "test_blog_posts"
+
+	mock_db.On("Collection", BlogUserReactionCollection).Return(mock_reactions_collection).Twice()
+	mock_db.On("Collection", BlogPostCollection).Return(mock_posts_collection).Once()
+
+	userIDStr := "6892fa4f6fb7d28124a96f68"
+	blogIDStr := "6892fa4f6fb7d28124a96f74"
+
+	userIDObjID, err := primitive.ObjectIDFromHex(userIDStr)
+	assert.NoError(t, err)
+	blogIDObjID, err := primitive.ObjectIDFromHex(blogIDStr)
+	assert.NoError(t, err)
+
+	mock_find_one_result := new(mongo_mocks.MockSingleResult)
+	mock_find_one_result.On("Decode", mock.Anything).Return(mongodriver.ErrNoDocuments).Once()
+
+	mock_reactions_collection.On("FindOne", ctx, mock.MatchedBy(func(filter interface{}) bool {
+		m, ok := filter.(bson.M)
+		return ok && m["blog_id"] == blogIDObjID && m["user_id"] == userIDObjID
+	})).Return(mock_find_one_result).Once()
+
+	expectedError := fmt.Errorf("simulated insert error")
+	mock_reactions_collection.On("InsertOne", ctx, mock.Anything).Return(nil, expectedError).Once()
+
+	repo := NewUserReactionRepo(mock_db, &mongo.Collections{
+		BlogUserReactions: BlogUserReactionCollection,
+		BlogPosts:         BlogPostCollection,
+	})
+
+	reaction := &domain.BlogUserReaction{
+		UserID: userIDStr,
+		BlogID: blogIDStr,
+		IsLike: true,
+	}
+
+	result, domainErr := repo.Create(ctx, reaction)
+
+	assert.NotNil(t, domainErr, "domain error expected on insert failure")
+	assert.Equal(t, http.StatusInternalServerError, domainErr.Code, "expected 500 status code")
+	assert.Contains(t, domainErr.Err.Error(), expectedError.Error(), "expected error message to contain simulated error")
+	assert.Nil(t, result, "result should be nil on insert failure")
 
 	mock_db.AssertExpectations(t)
 	mock_reactions_collection.AssertExpectations(t)
