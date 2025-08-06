@@ -92,6 +92,5 @@ func NewAuthRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Database) 
 		authHead.POST("/resend-otp", authController.ResendOTPRequest)
 		authHead.PATCH("/verify-otp", authController.VerifyOTPRequest)
 		authHead.PATCH("/change-role", authController.ChangeRoleRequest)
-		auth.PATCH("/change-role", middleware.AuthMiddleware(*env), authController.ChangeRoleRequest)
 	}
 }
