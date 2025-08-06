@@ -179,7 +179,7 @@ func (b *blogCommentRepository) Update(ctx context.Context, id string, comment *
 			"comment": comment.Comment,
 		},
 	}
-	_, err = b.db.Collection(b.collections.BlogPosts).UpdateOne(ctx, oid, update)
+	_, err = b.db.Collection(b.collections.BlogPosts).UpdateOne(ctx, bson.M{"_id": oid}, update)
 	if err != nil {
 		return &domain.BlogComment{}, &domain.DomainError{
 			Err:  fmt.Errorf("failed to update comment: %w", err),
