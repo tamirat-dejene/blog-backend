@@ -183,7 +183,7 @@ func (b *BlogPostController) UpdateBlog(ctx *gin.Context) {
 	}
 
 	var response dto.BlogPostResponse
-	response.Parse(&updatedBlog)
+	response.Parse(updatedBlog)
 
 	// Success response
 	ctx.JSON(http.StatusOK, domain.SuccessResponse{

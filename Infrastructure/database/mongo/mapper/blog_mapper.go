@@ -20,7 +20,7 @@ type BlogPostModel struct {
 	Dislikes        int                `bson:"dislikes"`
 	ViewCount       int                `bson:"view_count"`
 	CommentCount    int                `bson:"comment_count"`    // for easy access to comment count
-	PopularityScore int                `bson:"popularity_score"` // computed popularity score
+	PopularityScore float64            `bson:"popularity_score"` // computed popularity score
 }
 
 type BlogCommentModel struct {
@@ -37,6 +37,12 @@ type BlogUserReactionModel struct {
 	UserID    primitive.ObjectID `bson:"user_id"`
 	IsLike    bool               `bson:"is_like"`
 	CreatedAt primitive.DateTime `bson:"created_at"`
+}
+
+type BlogPostsPageModel struct {
+	Blogs      []BlogPostModel `bson:"blogs"`
+	PageNumber int             `bson:"page_number"`
+	PageSize   int             `bson:"page_size"`
 }
 
 type ObjectIDModel struct {
@@ -133,4 +139,30 @@ func (b *BlogUserReactionModel) ToDomain() *domain.BlogUserReaction {
 		IsLike:    b.IsLike,
 		CreatedAt: b.CreatedAt.Time(),
 	}
+}
+
+func (b *BlogPostsPageModel) ToDomain() *domain.BlogPostsPage {
+	blogs := make([]domain.BlogPost, len(b.Blogs))
+	for i, blog := range b.Blogs {
+		blogs[i] = *blog.ToDomain()
+	}
+	return &domain.BlogPostsPage{
+		Blogs:      blogs,
+		PageNumber: b.PageNumber,
+		PageSize:   b.PageSize,
+	}
+}
+
+func (b *BlogPostsPageModel) Parse(page *domain.BlogPostsPage) error {
+	b.PageNumber = page.PageNumber
+	b.PageSize = page.PageSize
+	b.Blogs = make([]BlogPostModel, len(page.Blogs))
+	for i, blog := range page.Blogs {
+		var blogModel BlogPostModel
+		if err := blogModel.Parse(&blog); err != nil {
+			return fmt.Errorf("failed to parse blog post: %w", err)
+		}
+		b.Blogs[i] = blogModel
+	}
+	return nil
 }

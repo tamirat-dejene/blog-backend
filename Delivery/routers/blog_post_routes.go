@@ -16,11 +16,14 @@ func NewBlogRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Database) 
 	blogGroup := api.Group("/blogs")
 
 	blog_post_controller := controllers.BlogPostController{
-		BlogPostUsecase: usecases.NewBlogPostUsecase(repository.NewBlogPostRepo(db, redis.NewRedisClient(env), &mongo.Collections{
-			BlogPosts:         env.BlogPostCollection,
-			BlogComments:      env.BlogCommentCollection,
-			BlogUserReactions: env.BlogUserReactionCollection,
-		}), time.Duration(env.CtxTSeconds)*time.Second),
+		BlogPostUsecase: usecases.NewBlogPostUsecase(
+			repository.NewBlogPostRepo(db, &mongo.Collections{
+				BlogPosts:         env.BlogPostCollection,
+				BlogComments:      env.BlogCommentCollection,
+				BlogUserReactions: env.BlogUserReactionCollection,
+			}),
+			redis.NewRedisClient(env, &redis.RedisService{}),
+			time.Duration(env.CtxTSeconds)*time.Second),
 		Env: env,
 	}
 

@@ -38,3 +38,7 @@ func (r *RedisService) GenerateBlogPostReactionsKey(blogID string) string {
 func (r *RedisService) GenerateBlogPostAuthorKey(authorID string) string {
 	return fmt.Sprintf("blogpost:author:%s", authorID)
 }
+
+func (r *RedisService) GenerateBlogCommentKey(id string) string {
+	return fmt.Sprintf("blogcomment:%s", id)
+}

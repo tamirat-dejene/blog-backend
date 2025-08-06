@@ -20,21 +20,23 @@ type RedisClient interface {
 	Decrement(ctx context.Context, key string) (int64, error)
 	Expire(ctx context.Context, key string, expiration time.Duration) error
 	GetCacheExpiry() time.Duration
+	Service() *RedisService
 }
 
 type redisClient struct {
-	client      *redis.Client
-	cacheExpiry time.Duration
+	client       *redis.Client
+	cacheExpiry  time.Duration
+	redisService *RedisService
 }
 
-func NewRedisClient(env *bootstrap.Env) *redisClient {
+func NewRedisClient(env *bootstrap.Env, redisService *RedisService) *redisClient {
 	client := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%d", env.RedisHost, env.RedisPort),
 		Password: env.RedisPassword,
 		DB:       env.RedisDB,
 	})
 
-	return &redisClient{client: client, cacheExpiry: time.Duration(env.CacheExpirationSeconds) * time.Second}
+	return &redisClient{client: client, cacheExpiry: time.Duration(env.CacheExpirationSeconds) * time.Second, redisService: redisService}
 }
 
 func (r *redisClient) GetClient() *redis.Client {
@@ -109,4 +111,8 @@ func (r *redisClient) GetCacheExpiry() time.Duration {
 		return 1 * time.Hour
 	}
 	return r.cacheExpiry
+}
+
+func (r *redisClient) Service() *RedisService {
+	return r.redisService
 }

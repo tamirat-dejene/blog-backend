@@ -127,14 +127,15 @@ func DeserializeBlogPostsPage(serialized string) ([]mapper.BlogPostModel, error)
 	return wrapper.Pages, nil
 }
 
-// SerializeBlogPostsPage converts a slice of BlogPostModel into a serialized string.
-func SerializeBlogPostsPage(pages []mapper.BlogPostModel) (string, error) {
-	if len(pages) == 0 {
-		return "", nil // return empty string if no pages to serialize
+// SerializeBlogPostsPage converts a slice of BlogPostsPage into a serialized string.
+func SerializeBlogPostsPage(pages *[]mapper.BlogPostModel) (string, error) {
+	// If the input slice is nil or empty, return an empty string
+	if pages == nil || len(*pages) == 0 {
+		return "", nil
 	}
 
 	// Wrap the slice in a top-level document
-	wrapped := bson.M{"pages": pages}
+	wrapped := bson.M{"pages": *pages}
 
 	// Serialize to Extended JSON
 	serialized, err := bson.MarshalExtJSON(wrapped, false, false)
