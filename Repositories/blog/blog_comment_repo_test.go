@@ -158,16 +158,3 @@ func TestCommentRepo_Delete_NotFound(t *testing.T) {
 	mockDB.AssertExpectations(t)
 	mockCollection.AssertExpectations(t)
 }
-
-// func TestCommentRepo_Update_Success(t *testing.T) {
-// 	t.Parallel()
-
-// 	ctx := context.TODO()
-// 	mockDB := mongo_mocks.NewMockDatabase(t)
-// 	mockCollection := mongo_mocks.NewMockCollection(t)
-// 	blogCommentCollection := "test_blog_comment"
-
-// 	repo := NewBlogCommentRepository(mockDB, &mongo.Collections{BlogComments: blogCommentCollection})
-// 	mockDB.On("Collection", blogCommentCollection).Return(mockCollection)
-
-// }
