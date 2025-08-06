@@ -111,3 +111,61 @@ func PaginateBlogs(blogs []mapper.BlogPostModel, pageSize int) []domain.BlogPost
 
 	return pages
 }
+
+// DecerializeBlogPostsPage converts a serialized string into a slice of BlogPostsPage.
+func DeserializeBlogPostsPage(serialized string) ([]mapper.BlogPostModel, error) {
+	// Define a wrapper matching the serialized structure
+	var wrapper struct {
+		Pages []mapper.BlogPostModel `bson:"pages"`
+	}
+
+	err := bson.UnmarshalExtJSON([]byte(serialized), false, &wrapper)
+	if err != nil {
+		return nil, err
+	}
+
+	return wrapper.Pages, nil
+}
+
+// SerializeBlogPostsPage converts a slice of BlogPostsPage into a serialized string.
+func SerializeBlogPostsPage(pages *[]mapper.BlogPostModel) (string, error) {
+	// If the input slice is nil or empty, return an empty string
+	if pages == nil || len(*pages) == 0 {
+		return "", nil
+	}
+
+	// Wrap the slice in a top-level document
+	wrapped := bson.M{"pages": *pages}
+
+	// Serialize to Extended JSON
+	serialized, err := bson.MarshalExtJSON(wrapped, false, false)
+	if err != nil {
+		return "", err
+	}
+
+	return string(serialized), nil
+}
+
+// DeserializeBlogPost converts a serialized string into a BlogPostModel.
+func DeserializeBlogPost(serialized string) (*mapper.BlogPostModel, error) {
+	var blogModel mapper.BlogPostModel
+	err := bson.UnmarshalExtJSON([]byte(serialized), false, &blogModel)
+	if err != nil {
+		return nil, err
+	}
+	return &blogModel, nil
+}
+
+// SerializeBlogPost converts a BlogPostModel into a serialized string.
+func SerializeBlogPost(blog *mapper.BlogPostModel) (string, error) {
+	if blog == nil {
+		return "", nil // return empty string if no blog to serialize
+	}
+
+	serialized, err := bson.MarshalExtJSON(blog, false, false)
+	if err != nil {
+		return "", err
+	}
+
+	return string(serialized), nil
+}

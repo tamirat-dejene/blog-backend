@@ -77,17 +77,18 @@ func (b *blogPostRepo) Delete(ctx context.Context, id string) *domain.DomainErro
 			Code: http.StatusInternalServerError,
 		}
 	}
+
 	return nil
 }
 
 // Get implements domain.BlogRepository.
-func (b *blogPostRepo) Get(ctx context.Context, filter *domain.BlogPostFilter) ([]domain.BlogPostsPage, *domain.DomainError) {
+func (b *blogPostRepo) Get(ctx context.Context, filter *domain.BlogPostFilter) ([]domain.BlogPostsPage, *string, *domain.DomainError) {
 	collection := b.db.Collection(b.collections.BlogPosts)
 	pipeline := utils.BuildBlogRetrievalAggregationPipeline(filter)
 
 	cursor, err := collection.Aggregate(ctx, pipeline)
 	if err != nil {
-		return nil, &domain.DomainError{
+		return nil, nil, &domain.DomainError{
 			Err:  err,
 			Code: http.StatusInternalServerError,
 		}
@@ -96,17 +97,35 @@ func (b *blogPostRepo) Get(ctx context.Context, filter *domain.BlogPostFilter) (
 
 	var dbResults []mapper.BlogPostModel
 	if err := cursor.All(ctx, &dbResults); err != nil {
-		return nil, &domain.DomainError{
+		return nil, nil, &domain.DomainError{
 			Err:  err,
 			Code: http.StatusInternalServerError,
 		}
 	}
 
-	return utils.PaginateBlogs(dbResults, filter.PageSize), nil
+	if len(dbResults) == 0 {
+		return nil, nil, &domain.DomainError{
+			Err:  errors.New("no blog posts found"),
+			Code: http.StatusNotFound,
+		}
+	}
+
+	// Serialize the results for caching
+	serialized, err := utils.SerializeBlogPostsPage(&dbResults)
+
+	if err != nil {
+		return nil, nil, &domain.DomainError{
+			Err:  errors.New("failed to serialize blog posts page"),
+			Code: http.StatusInternalServerError,
+		}
+	}
+
+	return utils.PaginateBlogs(dbResults, filter.PageSize), &serialized, nil
 }
 
 // GetBlogByID implements domain.BlogRepository.
 func (b *blogPostRepo) GetBlogByID(ctx context.Context, id string) (*domain.BlogPost, *domain.DomainError) {
+	// Validate the ID format
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, &domain.DomainError{
@@ -115,7 +134,8 @@ func (b *blogPostRepo) GetBlogByID(ctx context.Context, id string) (*domain.Blog
 		}
 	}
 
-	var blogModel mapper.BlogPostModel
+	// Fetch the blog post from the database
+	var blogModel *mapper.BlogPostModel
 	err = b.db.Collection(b.collections.BlogPosts).FindOne(ctx, bson.M{"_id": oid}).Decode(&blogModel)
 	if err == mongo.ErrNoDocuments() {
 		return nil, &domain.DomainError{
@@ -129,58 +149,15 @@ func (b *blogPostRepo) GetBlogByID(ctx context.Context, id string) (*domain.Blog
 		}
 	}
 
-	// Increment the view count
-	_, err = b.db.Collection(b.collections.BlogPosts).UpdateOne(ctx, bson.M{"_id": oid}, bson.M{
-		"$inc": bson.M{"view_count": 1},
-	})
-	if err != nil {
-		return nil, &domain.DomainError{
-			Err:  err,
-			Code: http.StatusInternalServerError,
-		}
-	}
-	blogModel.ViewCount += 1
-
-	// Convert the model to domain
-	if blogModel.ID.IsZero() {
-		return nil, &domain.DomainError{
-			Err:  err,
-			Code: http.StatusNotFound,
-		}
-	}
-
-	// Calculate the popularity score
-	ps := utils.CalculatePopularityScore(blogModel.Likes, blogModel.ViewCount, blogModel.CommentCount, blogModel.Dislikes)
-	_, err = b.db.Collection(b.collections.BlogPosts).UpdateOne(ctx, bson.M{"_id": oid}, bson.M{
-		"$set": bson.M{"popularity_score": ps},
-	})
-	if err != nil {
-		return nil, &domain.DomainError{
-			Err:  err,
-			Code: http.StatusInternalServerError,
-		}
-	}
-	blogModel.PopularityScore = int(ps)
-
-	blog := blogModel.ToDomain()
-	if blog == nil {
-		return nil, &domain.DomainError{
-			Err:  fmt.Errorf("failed to convert blog model to domain for ID: %s", id),
-			Code: http.StatusInternalServerError,
-		}
-	}
-
-	// Set the ID back to the domain model
-	blog.ID = blogModel.ID.Hex()
-	return blog, nil
+	return blogModel.ToDomain(), nil
 }
 
 // Update implements domain.BlogRepository.
-func (b *blogPostRepo) Update(ctx context.Context, id string, blog domain.BlogPost) (domain.BlogPost, *domain.DomainError) {
+func (b *blogPostRepo) Update(ctx context.Context, id string, blog domain.BlogPost) (*domain.BlogPost, *domain.DomainError) {
 	oid, err := primitive.ObjectIDFromHex(blog.ID)
 
 	if err != nil {
-		return domain.BlogPost{}, &domain.DomainError{
+		return nil, &domain.DomainError{
 			Err:  err,
 			Code: http.StatusBadRequest,
 		}
@@ -198,7 +175,7 @@ func (b *blogPostRepo) Update(ctx context.Context, id string, blog domain.BlogPo
 
 	_, err = b.db.Collection(b.collections.BlogPosts).UpdateOne(ctx, bson.M{"_id": oid}, update)
 	if err != nil {
-		return domain.BlogPost{}, &domain.DomainError{
+		return nil, &domain.DomainError{
 			Err:  err,
 			Code: http.StatusInternalServerError,
 		}
@@ -206,9 +183,132 @@ func (b *blogPostRepo) Update(ctx context.Context, id string, blog domain.BlogPo
 
 	// Return the updated blog
 	blog.ID = oid.Hex()
-	return blog, nil
+	return &blog, nil
 }
 
+// RefreshPopularityScore implements domain.BlogRepository.
+func (b *blogPostRepo) RefreshPopularityScore(ctx context.Context, id string) (*domain.BlogPost, *domain.DomainError) {
+	oid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, &domain.DomainError{
+			Err:  err,
+			Code: http.StatusBadRequest,
+		}
+	}
+
+	var blogModel mapper.BlogPostModel
+	err = b.db.Collection(b.collections.BlogPosts).FindOne(ctx, bson.M{"_id": oid}).Decode(&blogModel)
+	if err == mongo.ErrNoDocuments() {
+		return nil, &domain.DomainError{
+			Err:  fmt.Errorf("blog post with ID %s not found", id),
+			Code: http.StatusNotFound,
+		}
+	} else if err != nil {
+		return nil, &domain.DomainError{
+			Err:  err,
+			Code: http.StatusInternalServerError,
+		}
+	}
+
+	ps := utils.CalculatePopularityScore(blogModel.Likes, blogModel.ViewCount, blogModel.CommentCount, blogModel.Dislikes)
+	_, err = b.db.Collection(b.collections.BlogPosts).UpdateOne(ctx, bson.M{"_id": oid}, bson.M{
+		"$set": bson.M{"popularity_score": ps},
+	})
+
+	if err != nil {
+		return nil, &domain.DomainError{
+			Err:  err,
+			Code: http.StatusInternalServerError,
+		}
+	}
+
+	blogModel.PopularityScore = ps
+	return blogModel.ToDomain(), nil
+}
+
+// IncrementViewCount implements domain.BlogRepository.
+func (b *blogPostRepo) IncrementViewCount(ctx context.Context, id string) (*domain.BlogPost, *domain.DomainError) {
+	oid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, &domain.DomainError{
+			Err:  err,
+			Code: http.StatusBadRequest,
+		}
+	}
+
+	// Increment the view count
+	update := bson.M{"$inc": bson.M{"view_count": 1}}
+	_, err = b.db.Collection(b.collections.BlogPosts).UpdateOne(ctx, bson.M{"_id": oid}, update)
+	if err != nil {
+		return nil, &domain.DomainError{
+			Err:  err,
+			Code: http.StatusInternalServerError,
+		}
+	}
+
+	return b.GetBlogByID(ctx, id)
+}
+
+// UpdateCommentCount implements domain.BlogRepository.
+func (b *blogPostRepo) UpdateCommentCount(ctx context.Context, id string, increment bool) (*domain.BlogPost, *domain.DomainError) {
+	oid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, &domain.DomainError{
+			Err:  err,
+			Code: http.StatusBadRequest,
+		}
+	}
+
+	var update bson.M
+	if increment {
+		update = bson.M{"$inc": bson.M{"comment_count": 1}}
+	} else {
+		update = bson.M{"$inc": bson.M{"comment_count": -1}}
+	}
+
+	_, err = b.db.Collection(b.collections.BlogPosts).UpdateOne(ctx, bson.M{"_id": oid}, update)
+	if err != nil {
+		return nil, &domain.DomainError{
+			Err:  err,
+			Code: http.StatusInternalServerError,
+		}
+	}
+
+	return b.GetBlogByID(ctx, id)
+}
+
+// UpdateReactionCount implements domain.BlogRepository.
+func (b *blogPostRepo) UpdateReactionCount(ctx context.Context, is_like bool, id string, increment bool) (*domain.BlogPost, *domain.DomainError) {
+	oid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, &domain.DomainError{
+			Err:  err,
+			Code: http.StatusBadRequest,
+		}
+	}
+
+	field := "dislikes"
+	if is_like {
+		field = "likes"
+	}
+	inc := -1
+	if increment {
+		inc = 1
+	}
+	update := bson.M{"$inc": bson.M{field: inc}}
+
+	_, err = b.db.Collection(b.collections.BlogPosts).UpdateOne(ctx, bson.M{"_id": oid}, update)
+	if err != nil {
+		return nil, &domain.DomainError{
+			Err:  err,
+			Code: http.StatusInternalServerError,
+		}
+	}
+
+	return b.GetBlogByID(ctx, id)
+}
+
+// NewBlogPostRepo creates a new instance of blogPostRepo.
 func NewBlogPostRepo(database mongo.Database, collections *mongo.Collections) domain.BlogPostRepository {
 	return &blogPostRepo{
 		db:          database,

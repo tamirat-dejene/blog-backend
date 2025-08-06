@@ -32,7 +32,7 @@ func (b *blogCommentRepository) Create(ctx context.Context, comment *domain.Blog
 	}
 
 	// Set CreatedAt field and insert the comment
-	comment_mondel.CreatedAt = time.Now()
+	comment_mondel.CreatedAt = primitive.NewDateTimeFromTime(time.Now())
 	inserted, err := b.db.Collection(b.collections.BlogComments).InsertOne(ctx, comment_mondel)
 
 	if err != nil {
