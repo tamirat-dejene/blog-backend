@@ -1,12 +1,18 @@
 package controllers
 
 import (
+	"context"
+	"g6/blog-api/Delivery/bootstrap"
 	dto "g6/blog-api/Delivery/dto"
 	domain "g6/blog-api/Domain"
+	"g6/blog-api/Infrastructure/oauth"
 	"g6/blog-api/Infrastructure/security"
 	utils "g6/blog-api/Utils"
 	"net/http"
+	"strings"
 	"time"
+
+	"google.golang.org/api/oauth2/v2"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,6 +23,7 @@ type AuthController struct {
 	OTP                  domain.IOTPUsecase
 	RefreshTokenUsecase  domain.IRefreshTokenUsecase
 	PasswordResetUsecase domain.IPasswordResetUsecase
+	Env                  *bootstrap.Env
 }
 
 func (ac *AuthController) RegisterRequest(c *gin.Context) {
@@ -433,4 +440,152 @@ func (ac *AuthController) ResendOTPRequest(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "OTP resent successfully"})
+}
+
+//Oauth Google handlers
+
+func (ac *AuthController) GoogleLogin(c *gin.Context) {
+	conf := oauth.GetGoogleOAuthConfig(ac.Env.GoogleClientID, ac.Env.GoogleClientSecret, ac.Env.GoogleRedirectURL)
+	url := conf.AuthCodeURL("random-state")
+	c.Redirect(http.StatusTemporaryRedirect, url)
+}
+
+func (ac *AuthController) GoogleCallback(c *gin.Context) {
+	code := c.Query("code")
+	if code == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "code not found"})
+		return
+	}
+
+	conf := oauth.GetGoogleOAuthConfig(ac.Env.GoogleClientID, ac.Env.GoogleClientSecret, ac.Env.GoogleRedirectURL)
+	token, err := conf.Exchange(context.Background(), code)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to exchange token"})
+		return
+	}
+
+	client := conf.Client(context.Background(), token)
+	service, err := oauth2.New(client)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create oauth service"})
+		return
+	}
+
+	userInfo, err := service.Userinfo.Get().Do()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get user info"})
+		return
+	}
+
+	// Try finding user by email
+	user, err := ac.UserUsecase.FindByUsernameOrEmail(c.Request.Context(), userInfo.Email)
+	if err == nil && user != nil {
+		// User exists - login flow
+		response, err := ac.AuthService.GenerateTokens(*user)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+			return
+		}
+
+		refreshToken := &domain.RefreshToken{
+			Token:     response.RefreshToken,
+			UserID:    user.ID,
+			ExpiresAt: response.RefreshTokenExpiresAt,
+			Revoked:   false,
+			CreatedAt: time.Now(),
+		}
+
+		if existingToken, err := ac.RefreshTokenUsecase.FindByUserID(user.ID); err == nil {
+			ac.RefreshTokenUsecase.RevokedToken(existingToken)
+			ac.RefreshTokenUsecase.ReplaceToken(refreshToken)
+		} else {
+			ac.RefreshTokenUsecase.Save(refreshToken)
+		}
+
+		utils.SetCookie(c, utils.CookieOptions{
+			Name:     "refresh_token",
+			Value:    response.RefreshToken,
+			MaxAge:   int(time.Until(response.RefreshTokenExpiresAt).Seconds()),
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   false,
+			SameSite: http.SameSiteStrictMode,
+		})
+
+		utils.SetCookie(c, utils.CookieOptions{
+			Name:     "access_token",
+			Value:    response.AccessToken,
+			MaxAge:   int(time.Until(response.AccessTokenExpiresAt).Seconds()),
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   false,
+			SameSite: http.SameSiteStrictMode,
+		})
+
+		c.JSON(http.StatusOK, gin.H{"message": "Login successful via Google", "user": dto.ToUserResponse(*user)})
+		return
+	}
+
+	// If user not found – register new one
+	newUser := &domain.User{
+		Username:  strings.Split(userInfo.Email, "@")[0],
+		Email:     userInfo.Email,
+		FirstName: userInfo.GivenName,
+		LastName:  userInfo.FamilyName,
+		Role:      "user",
+		Bio:       "",
+		AvatarURL: userInfo.Picture,
+		Provider:  "google",
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	if err := ac.UserUsecase.Register(newUser); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to register user"})
+		return
+	}
+
+	// Generate token for new user
+	response, err := ac.AuthService.GenerateTokens(*newUser)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+
+	refreshToken := &domain.RefreshToken{
+		Token:     response.RefreshToken,
+		UserID:    newUser.ID,
+		ExpiresAt: response.RefreshTokenExpiresAt,
+		Revoked:   false,
+		CreatedAt: time.Now(),
+	}
+
+	if existingToken, err := ac.RefreshTokenUsecase.FindByUserID(newUser.ID); err == nil {
+		ac.RefreshTokenUsecase.RevokedToken(existingToken)
+		ac.RefreshTokenUsecase.ReplaceToken(refreshToken)
+	} else {
+		ac.RefreshTokenUsecase.Save(refreshToken)
+	}
+
+	utils.SetCookie(c, utils.CookieOptions{
+		Name:     "refresh_token",
+		Value:    response.RefreshToken,
+		MaxAge:   int(time.Until(response.RefreshTokenExpiresAt).Seconds()),
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteStrictMode,
+	})
+
+	utils.SetCookie(c, utils.CookieOptions{
+		Name:     "access_token",
+		Value:    response.AccessToken,
+		MaxAge:   int(time.Until(response.AccessTokenExpiresAt).Seconds()),
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteStrictMode,
+	})
+
+	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully via Google", "user": dto.ToUserResponse(*newUser)})
 }

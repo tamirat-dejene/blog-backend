@@ -18,6 +18,7 @@ type UserRequest struct {
 	AvatarURL  string    `json:"avatar_url" validate:"omitempty,url"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
+	Provider   string    `json:"provider" validate:"required,oneof=manual google"`
 }
 
 type UserResponse struct {
@@ -48,6 +49,7 @@ func ToDomainUser(req UserRequest) domain.User {
 		AvatarURL:  req.AvatarURL,
 		CreatedAt:  req.CreatedAt,
 		UpdatedAt:  req.UpdatedAt,
+		Provider:   req.Provider,
 	}
 }
 

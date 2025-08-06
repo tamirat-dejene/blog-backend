@@ -18,6 +18,7 @@ type User struct {
 	IsVerified bool
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
+	Provider   string
 }
 
 type UserRole string

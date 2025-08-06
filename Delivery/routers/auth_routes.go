@@ -69,6 +69,7 @@ func NewAuthRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Database) 
 		AuthService:          authService,
 		RefreshTokenUsecase:  usercase.NewRefreshTokenUsecase(repositories.NewRefreshTokenRepository(db, env.RefreshTokenCollection)),
 		PasswordResetUsecase: passwordResetUsecase,
+		Env:                  env,
 	}
 
 	auth := api.Group("/auth/")
@@ -80,6 +81,9 @@ func NewAuthRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Database) 
 		auth.POST("/reset-password", authController.ResetPasswordRequest)
 		auth.POST("/refresh", authController.RefreshToken)
 
+		auth.GET("/google/login", authController.GoogleLogin)
+		auth.GET("/google/callback", authController.GoogleCallback)
+
 	}
 	authHead := auth
 	authHead.Use(middleware.AuthMiddleware(*env))
@@ -88,5 +92,6 @@ func NewAuthRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Database) 
 		authHead.POST("/resend-otp", authController.ResendOTPRequest)
 		authHead.PATCH("/verify-otp", authController.VerifyOTPRequest)
 		authHead.PATCH("/change-role", authController.ChangeRoleRequest)
+		auth.PATCH("/change-role", middleware.AuthMiddleware(*env), authController.ChangeRoleRequest)
 	}
 }

@@ -3,7 +3,6 @@ package mapper
 import (
 	"fmt"
 	domain "g6/blog-api/Domain"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -15,13 +14,13 @@ type BlogPostModel struct {
 	AuthorID        primitive.ObjectID `bson:"author_id"`
 	AuthorName      string             `bson:"author_name"` // for easy access to author's name: first_name + last_name
 	Tags            []string           `bson:"tags,omitempty"`
-	CreatedAt       time.Time          `bson:"created_at"`
-	UpdatedAt       time.Time          `bson:"updated_at"`
+	CreatedAt       primitive.DateTime `bson:"created_at"`
+	UpdatedAt       primitive.DateTime `bson:"updated_at"`
 	Likes           int                `bson:"likes"`
 	Dislikes        int                `bson:"dislikes"`
 	ViewCount       int                `bson:"view_count"`
 	CommentCount    int                `bson:"comment_count"`    // for easy access to comment count
-	PopularityScore int                `bson:"popularity_score"` // computed popularity score
+	PopularityScore float64            `bson:"popularity_score"` // computed popularity score
 }
 
 type BlogCommentModel struct {
@@ -29,7 +28,7 @@ type BlogCommentModel struct {
 	BlogID    primitive.ObjectID `bson:"blog_id"`
 	AuthorID  primitive.ObjectID `bson:"author_id"`
 	Comment   string             `bson:"comment"`
-	CreatedAt time.Time          `bson:"created_at"`
+	CreatedAt primitive.DateTime `bson:"created_at"`
 }
 
 type BlogUserReactionModel struct {
@@ -37,7 +36,13 @@ type BlogUserReactionModel struct {
 	BlogID    primitive.ObjectID `bson:"blog_id"`
 	UserID    primitive.ObjectID `bson:"user_id"`
 	IsLike    bool               `bson:"is_like"`
-	CreatedAt time.Time          `bson:"created_at"`
+	CreatedAt primitive.DateTime `bson:"created_at"`
+}
+
+type BlogPostsPageModel struct {
+	Blogs      []BlogPostModel `bson:"blogs"`
+	PageNumber int             `bson:"page_number"`
+	PageSize   int             `bson:"page_size"`
 }
 
 type ObjectIDModel struct {
@@ -54,8 +59,8 @@ func (b *BlogPostModel) Parse(bp *domain.BlogPost) error {
 	b.AuthorID = authorID
 	b.AuthorName = bp.AuthorName
 	b.Tags = bp.Tags
-	b.CreatedAt = bp.CreatedAt
-	b.UpdatedAt = bp.UpdatedAt
+	b.CreatedAt = primitive.NewDateTimeFromTime(bp.CreatedAt)
+	b.UpdatedAt = primitive.NewDateTimeFromTime(bp.UpdatedAt)
 	b.Likes = bp.Likes
 	b.Dislikes = bp.Dislikes
 	b.ViewCount = bp.ViewCount
@@ -72,8 +77,8 @@ func (b *BlogPostModel) ToDomain() *domain.BlogPost {
 		AuthorID:        b.AuthorID.Hex(),
 		AuthorName:      b.AuthorName,
 		Tags:            b.Tags,
-		CreatedAt:       b.CreatedAt,
-		UpdatedAt:       b.UpdatedAt,
+		CreatedAt:       b.CreatedAt.Time(),
+		UpdatedAt:       b.UpdatedAt.Time(),
 		Likes:           b.Likes,
 		Dislikes:        b.Dislikes,
 		ViewCount:       b.ViewCount,
@@ -94,7 +99,7 @@ func (c *BlogCommentModel) Parse(comment *domain.BlogComment) error {
 		return fmt.Errorf("invalid author ID: %w", err)
 	}
 	c.AuthorID = authorID
-	c.CreatedAt = comment.CreatedAt
+	c.CreatedAt = primitive.NewDateTimeFromTime(comment.CreatedAt)
 	return nil
 }
 
@@ -104,7 +109,7 @@ func (c *BlogCommentModel) ToDomain() *domain.BlogComment {
 		BlogID:    c.BlogID.Hex(),
 		AuthorID:  c.AuthorID.Hex(),
 		Comment:   c.Comment,
-		CreatedAt: c.CreatedAt,
+		CreatedAt: c.CreatedAt.Time(),
 	}
 }
 
@@ -122,7 +127,7 @@ func (b *BlogUserReactionModel) Parse(reaction *domain.BlogUserReaction) error {
 	b.UserID = userID
 
 	b.IsLike = reaction.IsLike
-	b.CreatedAt = reaction.CreatedAt
+	b.CreatedAt = primitive.NewDateTimeFromTime(reaction.CreatedAt)
 	return nil
 }
 
@@ -132,6 +137,32 @@ func (b *BlogUserReactionModel) ToDomain() *domain.BlogUserReaction {
 		BlogID:    b.BlogID.Hex(),
 		UserID:    b.UserID.Hex(),
 		IsLike:    b.IsLike,
-		CreatedAt: b.CreatedAt,
+		CreatedAt: b.CreatedAt.Time(),
 	}
+}
+
+func (b *BlogPostsPageModel) ToDomain() *domain.BlogPostsPage {
+	blogs := make([]domain.BlogPost, len(b.Blogs))
+	for i, blog := range b.Blogs {
+		blogs[i] = *blog.ToDomain()
+	}
+	return &domain.BlogPostsPage{
+		Blogs:      blogs,
+		PageNumber: b.PageNumber,
+		PageSize:   b.PageSize,
+	}
+}
+
+func (b *BlogPostsPageModel) Parse(page *domain.BlogPostsPage) error {
+	b.PageNumber = page.PageNumber
+	b.PageSize = page.PageSize
+	b.Blogs = make([]BlogPostModel, len(page.Blogs))
+	for i, blog := range page.Blogs {
+		var blogModel BlogPostModel
+		if err := blogModel.Parse(&blog); err != nil {
+			return fmt.Errorf("failed to parse blog post: %w", err)
+		}
+		b.Blogs[i] = blogModel
+	}
+	return nil
 }
