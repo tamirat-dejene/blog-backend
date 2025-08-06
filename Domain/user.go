@@ -17,6 +17,7 @@ type User struct {
 	AvatarURL string
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	Provider  string 
 }
 
 type UserRole string

@@ -65,6 +65,11 @@ type Env struct {
 
 	// Redis cache configuration
 	CacheExpirationSeconds int `mapstructure:"CACHE_EXPIRATION_SECONDS"` // in seconds
+
+  // Google OAuth2 Configuration
+	GoogleClientID     string `mapstructure:"GOOGLE_CLIENT_ID"`
+	GoogleClientSecret string `mapstructure:"GOOGLE_CLIENT_SECRET"`
+	GoogleRedirectURL  string `mapstructure:"GOOGLE_REDIRECT_URL"`
 }
 
 // Viper can be made injectable
