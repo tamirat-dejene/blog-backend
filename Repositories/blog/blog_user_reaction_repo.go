@@ -51,7 +51,7 @@ func (u *BlogUserReactionRepo) Create(ctx context.Context, reaction *domain.Blog
 	if err == mongo.ErrNoDocuments() {
 		// No existing reaction — insert new
 		reaction.CreatedAt = time.Now()
-		blogReaction.CreatedAt = reaction.CreatedAt
+		blogReaction.CreatedAt = primitive.NewDateTimeFromTime(reaction.CreatedAt)
 
 		inserted, err := u.db.Collection(u.collections.BlogUserReactions).InsertOne(ctx, blogReaction)
 		if err != nil {

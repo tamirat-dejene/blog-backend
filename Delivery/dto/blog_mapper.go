@@ -24,7 +24,7 @@ type BlogPostResponse struct {
 	Dislikes        int       `json:"dislikes"`
 	ViewCount       int       `json:"view_count"`
 	CommentCount    int       `json:"comment_count"`    // for easy access to comment count
-	PopularityScore int       `json:"popularity_score"` // computed popularity score
+	PopularityScore float64   `json:"popularity_score"` // computed popularity score
 }
 
 type BlogPostsPageResponse struct {
