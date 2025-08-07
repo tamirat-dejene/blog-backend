@@ -5,6 +5,7 @@ import (
 	"g6/blog-api/Delivery/controllers"
 	"g6/blog-api/Infrastructure/ai"
 	"g6/blog-api/Infrastructure/database/mongo"
+	"g6/blog-api/Infrastructure/middleware"
 	usecases "g6/blog-api/Usecases"
 	"time"
 
@@ -25,6 +26,6 @@ func NewBlogAIRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Database
 
 	ai := api.Group("/ai/blog")
 	{
-		ai.POST("/generate", blog_ai_controller.GenerateBlogContent) // Generate blog content from keywords
+		ai.POST("/generate", middleware.AuthMiddleware(*env), blog_ai_controller.GenerateBlogContent) // Generate blog content from keywords
 	}
 }
