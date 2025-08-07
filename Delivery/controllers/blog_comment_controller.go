@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"g6/blog-api/Delivery/bootstrap"
 	"g6/blog-api/Delivery/dto"
 	domain "g6/blog-api/Domain"
@@ -30,6 +31,7 @@ func (b *BlogCommentController) CreateComment(ctx *gin.Context) {
 	// Convert dto to domain model, and set the AuthorID if needed
 	var comment = req.ToDomain()
 	comment.AuthorID = ctx.GetString("user_id") // Assuming user_id is set in context after authentication
+	comment.BlogID = req.BlogID                 // Set the BlogID from the request
 
 	// Create the comment using the usecase
 	createdComment, domain_err := b.BlogCommentUsecase.CreateComment(ctx, comment)
@@ -45,7 +47,7 @@ func (b *BlogCommentController) CreateComment(ctx *gin.Context) {
 	// Convert the created comment to response DTO
 	var response dto.BlogCommentResponse
 	response.Parse(createdComment)
-	
+
 	// Return the created comment response
 	ctx.JSON(http.StatusCreated, domain.SuccessResponse{
 		Message: "Comment created successfully",
@@ -55,7 +57,9 @@ func (b *BlogCommentController) CreateComment(ctx *gin.Context) {
 
 func (b *BlogCommentController) DeleteComment(ctx *gin.Context) {
 	// Extract the comment ID from the URL parameters
-	if err := ctx.ShouldBindUri(&struct{ ID string `uri:"id"` }{}); err != nil {
+	if err := ctx.ShouldBindUri(&struct {
+		ID string `uri:"id"`
+	}{}); err != nil {
 		ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
 			Message: "Invalid comment ID format",
 			Error:   err.Error(),
@@ -85,7 +89,7 @@ func (b *BlogCommentController) DeleteComment(ctx *gin.Context) {
 
 func (b *BlogCommentController) GetCommentByID(ctx *gin.Context) {
 	var uriParams struct {
-		id string `uri:"id" binding:"required"`
+		ID string `uri:"id" binding:"required"`
 	}
 
 	// Extract the comment ID from the URL parameters
@@ -97,9 +101,10 @@ func (b *BlogCommentController) GetCommentByID(ctx *gin.Context) {
 		})
 		return
 	}
+	fmt.Println("Fetching comment by ID:", uriParams.ID)
 
 	// Call the usecase to get the comment by ID
-	comment, domain_err := b.BlogCommentUsecase.GetCommentByID(ctx, uriParams.id)
+	comment, domain_err := b.BlogCommentUsecase.GetCommentByID(ctx, uriParams.ID)
 	if domain_err != nil {
 		ctx.JSON(domain_err.Code, domain.ErrorResponse{
 			Message: "Error fetching comment",
@@ -161,7 +166,9 @@ func (b *BlogCommentController) GetCommentsByBlogID(ctx *gin.Context) {
 
 func (b *BlogCommentController) UpdateComment(ctx *gin.Context) {
 	// Extract the comment ID from the URL parameters
-	if err := ctx.ShouldBindUri(&struct{ ID string `uri:"id"` }{}); err != nil {
+	if err := ctx.ShouldBindUri(&struct {
+		ID string `uri:"id"`
+	}{}); err != nil {
 		ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
 			Message: "Invalid comment ID format",
 			Error:   err.Error(),
@@ -181,10 +188,10 @@ func (b *BlogCommentController) UpdateComment(ctx *gin.Context) {
 		})
 		return
 	}
-	
+
 	// Convert the request DTO to domain model and call the usecase to update the comment
 	comment := req.ToDomain()
-	comment.ID = id // Set the ID for the comment to update
+	comment.ID = id                             // Set the ID for the comment to update
 	comment.AuthorID = ctx.GetString("user_id") // Assuming user_id is set in context
 
 	updatedComment, domain_err := b.BlogCommentUsecase.UpdateComment(ctx, id, comment)
