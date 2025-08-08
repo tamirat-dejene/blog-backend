@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
 	"google.golang.org/api/oauth2/v2"
 
 	"github.com/gin-gonic/gin"
@@ -19,6 +20,7 @@ import (
 type AuthController struct {
 	UserUsecase          domain.IUserUsecase
 	AuthService          domain.IAuthService
+	OTP                  domain.IOTPUsecase
 	RefreshTokenUsecase  domain.IRefreshTokenUsecase
 	PasswordResetUsecase domain.IPasswordResetUsecase
 	Env                  *bootstrap.Env
@@ -352,6 +354,94 @@ func (ac *AuthController) ResetPasswordRequest(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Password reset successfully"})
 }
 
+// verify email request
+func (ac *AuthController) VerifyEmailRequest(c *gin.Context) {
+	var req dto.VerifyEmailRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	if err := validate.Struct(req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	user, err := ac.UserUsecase.GetUserByEmail(req.Email)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": domain.ErrNotFound})
+		return
+	}
+
+	err = ac.OTP.RequestOTP(user.Email)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Please check your email for the OTP to verify your account"})
+}
+
+// verify otp
+func (ac *AuthController) VerifyOTPRequest(c *gin.Context) {
+	userID := c.GetString("user_id")
+	var req dto.VerifyOTPRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	if err := validate.Struct(req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	user, err := ac.UserUsecase.FindUserByID(userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": domain.ErrNotFound})
+		return
+	}
+
+	otp, err := ac.OTP.VerifyOTP(user.Email, req.Code)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	// update user verification status
+	user.IsVerified = true
+	if _, err := ac.UserUsecase.UpdateUser(user.ID, user); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user verification status"})
+		return
+	}
+
+	// delete the OTP after successful verification
+	if err := ac.OTP.DeleteByID(otp.ID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": domain.ErrOTPFailedToDelete})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Email verified successfully"})
+}
+
+// otp resend request
+func (ac *AuthController) ResendOTPRequest(c *gin.Context) {
+	userID := c.GetString("user_id")
+	user, err := ac.UserUsecase.FindUserByID(userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": domain.ErrNotFound})
+		return
+	}
+
+	err = ac.OTP.RequestOTP(user.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to resend OTP", "error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "OTP resent successfully"})
+}
+
 //Oauth Google handlers
 
 func (ac *AuthController) GoogleLogin(c *gin.Context) {
@@ -464,7 +554,7 @@ func (ac *AuthController) GoogleCallback(c *gin.Context) {
 
 	refreshToken := &domain.RefreshToken{
 		Token:     response.RefreshToken,
-		UserID:    newUser.ID, 
+		UserID:    newUser.ID,
 		ExpiresAt: response.RefreshTokenExpiresAt,
 		Revoked:   false,
 		CreatedAt: time.Now(),

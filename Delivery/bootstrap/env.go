@@ -57,6 +57,11 @@ type Env struct {
 	ImageKitPublicKey  string `mapstructure:"IMAGEKIT_PUBLIC_KEY"`
 	ImageKitEndpoint   string `mapstructure:"IMAGEKIT_URL_ENDPOINT"`
 
+	// OTP secret salt
+	SecretSalt         string `mapstructure:"MY_SUPER_SECRET_SALT"`
+	OtpCollection      string `mapstructure:"OTP_COLLECTION"`
+	OtpExpireMinutes   int    `mapstructure:"OTP_EXPIRE_MINUTES"`
+	OtpMaximumAttempts int    `mapstructure:"OTP_MAXIMUM_ATTEMPTS"`
 	// Redis configuration
 	RedisHost     string `mapstructure:"REDIS_HOST"`
 	RedisPort     int    `mapstructure:"REDIS_PORT"`
@@ -66,7 +71,7 @@ type Env struct {
 	// Redis cache configuration
 	CacheExpirationSeconds int `mapstructure:"CACHE_EXPIRATION_SECONDS"` // in seconds
 
-  // Google OAuth2 Configuration
+	// Google OAuth2 Configuration
 	GoogleClientID     string `mapstructure:"GOOGLE_CLIENT_ID"`
 	GoogleClientSecret string `mapstructure:"GOOGLE_CLIENT_SECRET"`
 	GoogleRedirectURL  string `mapstructure:"GOOGLE_REDIRECT_URL"`
