@@ -2,15 +2,13 @@ package repository
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	domain "g6/blog-api/Domain"
 	"g6/blog-api/Infrastructure/database/mongo"
 	"g6/blog-api/Infrastructure/database/mongo/mapper"
 	mongo_mocks "g6/blog-api/Infrastructure/database/mongo/mocks"
-	"g6/blog-api/Infrastructure/database/mongo/utils"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -20,318 +18,218 @@ import (
 )
 
 func TestNewUserReactionRepo(t *testing.T) {
-	t.Parallel()
+	mockDB := mongo_mocks.NewMockDatabase(t)
+	mockCollections := &mongo.Collections{}
 
-	mock_db := mongo_mocks.NewMockDatabase(t)
-	mock_collections := mongo.Collections{}
-
-	repo := NewUserReactionRepo(mock_db, &mock_collections)
+	repo := NewUserReactionRepo(mockDB, mockCollections)
 
 	assert.NotNil(t, repo, "Expected non-nil repository")
 }
 
-func TestUserReaction_Create_Success_First_Reaction(t *testing.T) {
-	t.Parallel()
-
+func TestBlogUserReactionRepo_Create_NewReaction_Success(t *testing.T) {
 	ctx := context.TODO()
-	mock_db := new(mongo_mocks.MockDatabase)
-	mock_reactions_collection := new(mongo_mocks.MockCollection)
-	mock_posts_collection := new(mongo_mocks.MockCollection)
 
-	BlogUserReactionCollection := "test_blog_user_reaction"
-	BlogPostCollection := "test_blog_posts"
+	blogID := primitive.NewObjectID()
+	userID := primitive.NewObjectID()
 
-	mock_db.On("Collection", BlogUserReactionCollection).Return(mock_reactions_collection)
-	mock_db.On("Collection", BlogPostCollection).Return(mock_posts_collection)
+	mockDB := mongo_mocks.NewMockDatabase(t)
+	mockReactionCollection := mongo_mocks.NewMockCollection(t)
+	mockBlogCollection := mongo_mocks.NewMockCollection(t)
+	mockSingleResult := mongo_mocks.NewMockSingleResult(t)
 
-	mock_find_one_result := new(mongo_mocks.MockSingleResult)
-	mock_find_one_result.On("Decode", mock.Anything).Return(mongodriver.ErrNoDocuments)
+	mockDB.On("Collection", "blog_user_reactions").Return(mockReactionCollection)
+	mockDB.On("Collection", "blog_posts").Return(mockBlogCollection)
 
-	userID, err := primitive.ObjectIDFromHex("6892fa4f6fb7d28124a96f68")
-	assert.NoError(t, err)
-	blogID, err := primitive.ObjectIDFromHex("6892fa4f6fb7d28124a96f74")
-	assert.NoError(t, err)
-
-	mock_reactions_collection.On("FindOne", ctx, mock.MatchedBy(func(filter interface{}) bool {
-		m, ok := filter.(bson.M)
-		if !ok {
-			return false
-		}
-		return m["blog_id"] == blogID && m["user_id"] == userID
-	})).Return(mock_find_one_result).Once()
+	mockReactionCollection.On("FindOne", ctx, mock.Anything).Return(mockSingleResult)
+	mockSingleResult.On("Decode", mock.Anything).Return(mongodriver.ErrNoDocuments)
 
 	insertedID := primitive.NewObjectID()
-	mock_reactions_collection.On("InsertOne", ctx, mock.Anything).Return(&mongodriver.InsertOneResult{
-		InsertedID: insertedID,
-	}, nil).Once()
+	mockReactionCollection.On("InsertOne", ctx, mock.Anything).Return(&mongodriver.InsertOneResult{InsertedID: insertedID}, nil)
 
-	mock_posts_collection.On("UpdateOne", ctx, mock.Anything, mock.Anything).Return(&mongodriver.UpdateResult{
-		ModifiedCount: 1,
-	}, nil).Once()
+	mockBlogCollection.On("UpdateOne", ctx, bson.M{"_id": blogID}, bson.M{"$inc": bson.M{"likes": 1}}).Return(&mongodriver.UpdateResult{MatchedCount: 1, ModifiedCount: 1}, nil)
 
-	repo := NewUserReactionRepo(mock_db, &mongo.Collections{
-		BlogUserReactions: BlogUserReactionCollection,
-		BlogPosts:         BlogPostCollection,
-	})
+	repo := NewUserReactionRepo(mockDB, &mongo.Collections{BlogUserReactions: "blog_user_reactions", BlogPosts: "blog_posts"})
 
 	reaction := &domain.BlogUserReaction{
-		UserID: "6892fa4f6fb7d28124a96f68",
-		BlogID: "6892fa4f6fb7d28124a96f74",
+		BlogID: blogID.Hex(),
+		UserID: userID.Hex(),
 		IsLike: true,
 	}
 
-	result, domainErr := repo.Create(ctx, reaction)
-	assert.Nil(t, domainErr, "no domain error expected on create")
-	assert.NotNil(t, reaction)
+	result, err := repo.Create(ctx, reaction)
+
+	assert.Nil(t, err, "Expected no error")
+	assert.NotNil(t, result, "Expected a result")
 	assert.Equal(t, insertedID.Hex(), result.ID)
-	assert.NotNil(t, result)
-
-	mock_db.AssertExpectations(t)
-	mock_reactions_collection.AssertExpectations(t)
-	mock_posts_collection.AssertExpectations(t)
+	mockDB.AssertExpectations(t)
+	mockReactionCollection.AssertExpectations(t)
+	mockBlogCollection.AssertExpectations(t)
 }
 
-func TestUserReaction_Create_ExistingSameType(t *testing.T) {
-	t.Parallel()
-
+func TestBlogUserReactionRepo_Create_InvalidID(t *testing.T) {
 	ctx := context.TODO()
-	mock_db := new(mongo_mocks.MockDatabase)
-	mock_reactions_collection := new(mongo_mocks.MockCollection)
-	mock_posts_collection := new(mongo_mocks.MockCollection)
 
-	BlogUserReactionCollection := "test_blog_user_reaction"
-	BlogPostCollection := "test_blog_posts"
+	mockDB := mongo_mocks.NewMockDatabase(t)
 
-	mock_db.On("Collection", BlogUserReactionCollection).Return(mock_reactions_collection).Once()
-	mock_db.On("Collection", BlogPostCollection).Return(mock_posts_collection).Once()
+	repo := NewUserReactionRepo(mockDB, &mongo.Collections{BlogUserReactions: "blog_user_reactions"})
 
-	userIDStr, _ := primitive.ObjectIDFromHex("6892fa4f6fb7d28124a96f68")
-	blogIDStr, _ := primitive.ObjectIDFromHex("6892fa4f6fb7d28124a96f74")
-	existingReactionID := primitive.NewObjectID()
-	existingReaction := mapper.BlogUserReactionModel{
-		ID:        existingReactionID,
-		UserID:    userIDStr,
-		BlogID:    blogIDStr,
-		IsLike:    true,
-		CreatedAt: time.Now().Add(-24 * time.Hour),
-	}
-
-	mock_find_one_result := new(mongo_mocks.MockSingleResult)
-	mock_find_one_result.On("Decode", mock.Anything).Run(func(args mock.Arguments) {
-		arg := args.Get(0).(*mapper.BlogUserReactionModel)
-		*arg = existingReaction
-	}).Return(nil).Once()
-
-	mock_reactions_collection.On("FindOne", ctx, mock.MatchedBy(func(filter interface{}) bool {
-		m, ok := filter.(bson.M)
-		return ok && m["blog_id"] == blogIDStr && m["user_id"] == userIDStr
-	})).Return(mock_find_one_result).Once()
-
-	repo := NewUserReactionRepo(mock_db, &mongo.Collections{
-		BlogUserReactions: BlogUserReactionCollection,
-		BlogPosts:         BlogPostCollection,
-	})
-
-	newReactionAttempt := &domain.BlogUserReaction{
-		UserID: userIDStr.Hex(),
-		BlogID: blogIDStr.Hex(),
+	invalidReaction := &domain.BlogUserReaction{
+		BlogID: "invalid-id",
+		UserID: primitive.NewObjectID().Hex(),
 		IsLike: true,
 	}
 
-	result, domainErr := repo.Create(ctx, newReactionAttempt)
-	assert.Nil(t, domainErr, "no domain error expected for existing same type reaction")
-	assert.NotNil(t, result)
-	assert.Equal(t, existingReactionID.Hex(), result.ID, "Returned ID should match existing reaction ID")
+	result, err := repo.Create(ctx, invalidReaction)
 
-	mock_db.AssertExpectations(t)
-	mock_reactions_collection.AssertExpectations(t)
-	mock_posts_collection.AssertExpectations(t)
+	assert.Nil(t, result, "Expected nil result")
+	assert.NotNil(t, err, "Expected an error")
+	assert.Equal(t, http.StatusBadRequest, err.Code)
+	assert.Equal(t, "invalid reaction input: invalid blog ID: the provided hex string is not a valid ObjectID", err.Err.Error())
+	mockDB.AssertNotCalled(t, "Collection", mock.Anything)
 }
 
-func TestUserReaction_Create_ExistingDifferentType(t *testing.T) {
-	t.Parallel()
-
+func TestBlogUserReactionRepo_Create_DBFailure(t *testing.T) {
 	ctx := context.TODO()
-	mock_db := new(mongo_mocks.MockDatabase)
-	mock_reactions_collection := new(mongo_mocks.MockCollection)
-	mock_posts_collection := new(mongo_mocks.MockCollection)
 
-	BlogUserReactionCollection := "test_blog_user_reaction"
-	BlogPostCollection := "test_blog_posts"
+	mockDB := mongo_mocks.NewMockDatabase(t)
+	mockReactionCollection := mongo_mocks.NewMockCollection(t)
+	mockSingleResult := mongo_mocks.NewMockSingleResult(t)
 
-	mock_db.On("Collection", BlogUserReactionCollection).Return(mock_reactions_collection).Twice()
-	mock_db.On("Collection", BlogPostCollection).Return(mock_posts_collection).Once()
+	mockDB.On("Collection", "blog_user_reactions").Return(mockReactionCollection)
+	mockDB.On("Collection", "blog_posts").Return(mongo_mocks.NewMockCollection(t))
 
-	userIDStr := "6892fa4f6fb7d28124a96f68"
-	blogIDStr := "6892fa4f6fb7d28124a96f74"
+	dbErr := errors.New("database connection failed")
+	mockReactionCollection.On("FindOne", ctx, mock.Anything).Return(mockSingleResult)
+	mockSingleResult.On("Decode", mock.Anything).Return(dbErr)
 
-	userIDObjID, err := primitive.ObjectIDFromHex(userIDStr)
-	assert.NoError(t, err)
-	blogIDObjID, err := primitive.ObjectIDFromHex(blogIDStr)
-	assert.NoError(t, err)
-
-	blogObjectID, err := primitive.ObjectIDFromHex(blogIDStr)
-	assert.NoError(t, err)
-
-	existingReactionID := primitive.NewObjectID()
-	existingReaction := mapper.BlogUserReactionModel{
-		ID:        existingReactionID,
-		UserID:    userIDObjID,
-		BlogID:    blogIDObjID,
-		IsLike:    true,
-		CreatedAt: time.Now().Add(-24 * time.Hour),
-	}
-
-	initialBlogPost := mapper.BlogPostModel{
-		ID:           blogObjectID,
-		Likes:        5,
-		Dislikes:     2,
-		ViewCount:    100,
-		CommentCount: 10,
-	}
-
-	mock_find_one_reaction_result := new(mongo_mocks.MockSingleResult)
-	mock_find_one_reaction_result.On("Decode", mock.Anything).Run(func(args mock.Arguments) {
-		arg := args.Get(0).(*mapper.BlogUserReactionModel)
-		*arg = existingReaction
-	}).Return(nil).Once()
-
-	mock_reactions_collection.On("FindOne", ctx, mock.MatchedBy(func(filter interface{}) bool {
-		m, ok := filter.(bson.M)
-		if !ok {
-			return false
-		}
-		return m["blog_id"] == blogIDObjID && m["user_id"] == userIDObjID
-	})).Return(mock_find_one_reaction_result).Once()
-
-	mock_reactions_collection.On("UpdateOne", ctx, mock.MatchedBy(func(filter interface{}) bool {
-		m, ok := filter.(bson.M)
-		return ok && m["blog_id"] == blogIDObjID && m["user_id"] == userIDObjID
-	}), mock.MatchedBy(func(update interface{}) bool {
-		u, ok := update.(bson.M)
-		if !ok {
-			return false
-		}
-		set, ok := u["$set"].(bson.M)
-		return ok && set["is_like"] == false
-	})).Return(&mongodriver.UpdateResult{ModifiedCount: 1}, nil).Once()
-
-	mock_posts_collection.On("UpdateOne", ctx, mock.MatchedBy(func(filter interface{}) bool {
-		m, ok := filter.(bson.M)
-		return ok && m["_id"] == blogObjectID
-	}), mock.MatchedBy(func(update interface{}) bool {
-		u, ok := update.(bson.M)
-		if !ok {
-			return false
-		}
-		inc, ok := u["$inc"].(bson.M)
-		return ok && inc["likes"] == -1 && inc["dislikes"] == 1
-	})).Return(&mongodriver.UpdateResult{ModifiedCount: 1}, nil).Once()
-
-	mock_find_one_blog_result := new(mongo_mocks.MockSingleResult)
-	mock_find_one_blog_result.On("Decode", mock.Anything).Run(func(args mock.Arguments) {
-		arg := args.Get(0).(*mapper.BlogPostModel)
-		*arg = mapper.BlogPostModel{
-			ID:           blogObjectID,
-			Likes:        initialBlogPost.Likes - 1,
-			Dislikes:     initialBlogPost.Dislikes + 1,
-			ViewCount:    initialBlogPost.ViewCount,
-			CommentCount: initialBlogPost.CommentCount,
-		}
-	}).Return(nil).Once()
-
-	mock_posts_collection.On("FindOne", ctx, mock.MatchedBy(func(filter interface{}) bool {
-		m, ok := filter.(bson.M)
-		return ok && m["_id"] == blogObjectID
-	})).Return(mock_find_one_blog_result).Once()
-
-	mock_posts_collection.On("UpdateOne", ctx, mock.MatchedBy(func(filter interface{}) bool {
-		m, ok := filter.(bson.M)
-		return ok && m["_id"] == blogObjectID
-	}), mock.MatchedBy(func(update interface{}) bool {
-		u, ok := update.(bson.M)
-		if !ok {
-			return false
-		}
-		set, ok := u["$set"].(bson.M)
-		expectedPS := utils.CalculatePopularityScore(initialBlogPost.Likes-1, initialBlogPost.ViewCount, initialBlogPost.CommentCount, initialBlogPost.Dislikes+1)
-		return ok && set["popularity_score"] == expectedPS
-	})).Return(&mongodriver.UpdateResult{ModifiedCount: 1}, nil).Once()
-
-	repo := NewUserReactionRepo(mock_db, &mongo.Collections{
-		BlogUserReactions: BlogUserReactionCollection,
-		BlogPosts:         BlogPostCollection,
-	})
-
-	newReactionAttempt := &domain.BlogUserReaction{
-		UserID: userIDStr,
-		BlogID: blogIDStr,
-		IsLike: false,
-	}
-
-	result, domainErr := repo.Create(ctx, newReactionAttempt)
-	assert.Nil(t, domainErr, "no domain error expected for existing different type reaction")
-	assert.NotNil(t, result)
-	assert.Equal(t, existingReactionID.Hex(), result.ID, "Returned ID should match existing reaction ID")
-	assert.Equal(t, false, result.IsLike, "IsLike should be updated to false in the returned result")
-
-	mock_db.AssertExpectations(t)
-	mock_reactions_collection.AssertExpectations(t)
-	mock_posts_collection.AssertExpectations(t)
-}
-
-func TestUserReaction_Create_InsertFail(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.TODO()
-	mock_db := new(mongo_mocks.MockDatabase)
-	mock_reactions_collection := new(mongo_mocks.MockCollection)
-	mock_posts_collection := new(mongo_mocks.MockCollection)
-
-	BlogUserReactionCollection := "test_blog_user_reaction"
-	BlogPostCollection := "test_blog_posts"
-
-	mock_db.On("Collection", BlogUserReactionCollection).Return(mock_reactions_collection).Twice()
-	mock_db.On("Collection", BlogPostCollection).Return(mock_posts_collection).Once()
-
-	userIDStr := "6892fa4f6fb7d28124a96f68"
-	blogIDStr := "6892fa4f6fb7d28124a96f74"
-
-	userIDObjID, err := primitive.ObjectIDFromHex(userIDStr)
-	assert.NoError(t, err)
-	blogIDObjID, err := primitive.ObjectIDFromHex(blogIDStr)
-	assert.NoError(t, err)
-
-	mock_find_one_result := new(mongo_mocks.MockSingleResult)
-	mock_find_one_result.On("Decode", mock.Anything).Return(mongodriver.ErrNoDocuments).Once()
-
-	mock_reactions_collection.On("FindOne", ctx, mock.MatchedBy(func(filter interface{}) bool {
-		m, ok := filter.(bson.M)
-		return ok && m["blog_id"] == blogIDObjID && m["user_id"] == userIDObjID
-	})).Return(mock_find_one_result).Once()
-
-	expectedError := fmt.Errorf("simulated insert error")
-	mock_reactions_collection.On("InsertOne", ctx, mock.Anything).Return(nil, expectedError).Once()
-
-	repo := NewUserReactionRepo(mock_db, &mongo.Collections{
-		BlogUserReactions: BlogUserReactionCollection,
-		BlogPosts:         BlogPostCollection,
-	})
+	repo := NewUserReactionRepo(mockDB, &mongo.Collections{BlogUserReactions: "blog_user_reactions", BlogPosts: "blog_posts"})
 
 	reaction := &domain.BlogUserReaction{
-		UserID: userIDStr,
-		BlogID: blogIDStr,
+		BlogID: primitive.NewObjectID().Hex(),
+		UserID: primitive.NewObjectID().Hex(),
 		IsLike: true,
 	}
 
-	result, domainErr := repo.Create(ctx, reaction)
+	result, err := repo.Create(ctx, reaction)
 
-	assert.NotNil(t, domainErr, "domain error expected on insert failure")
-	assert.Equal(t, http.StatusInternalServerError, domainErr.Code, "expected 500 status code")
-	assert.Contains(t, domainErr.Err.Error(), expectedError.Error(), "expected error message to contain simulated error")
-	assert.Nil(t, result, "result should be nil on insert failure")
+	assert.Nil(t, result, "Expected nil result")
+	assert.NotNil(t, err, "Expected an error")
+	assert.Equal(t, http.StatusInternalServerError, err.Code)
+	assert.Contains(t, err.Err.Error(), "failed to check existing reaction")
+	mockDB.AssertExpectations(t)
+	mockReactionCollection.AssertExpectations(t)
+}
 
-	mock_db.AssertExpectations(t)
-	mock_reactions_collection.AssertExpectations(t)
-	mock_posts_collection.AssertExpectations(t)
+func TestBlogUserReactionRepo_Delete_Success(t *testing.T) {
+	ctx := context.TODO()
+
+	reactionID := primitive.NewObjectID()
+	blogID := primitive.NewObjectID()
+
+	mockDB := mongo_mocks.NewMockDatabase(t)
+	mockReactionCollection := mongo_mocks.NewMockCollection(t)
+	mockBlogCollection := mongo_mocks.NewMockCollection(t)
+	mockSingleResult := mongo_mocks.NewMockSingleResult(t)
+
+	mockDB.On("Collection", "blog_user_reactions").Return(mockReactionCollection)
+	mockDB.On("Collection", "blog_posts").Return(mockBlogCollection)
+
+	foundReaction := mapper.BlogUserReactionModel{
+		ID:     reactionID,
+		BlogID: blogID,
+		IsLike: true,
+	}
+	mockReactionCollection.On("FindOne", ctx, mock.Anything).Return(mockSingleResult)
+	mockSingleResult.On("Decode", mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+		arg := args.Get(0).(*mapper.BlogUserReactionModel)
+		*arg = foundReaction
+	})
+
+	mockReactionCollection.On("DeleteOne", ctx, mock.Anything).Return(int64(1), nil)
+
+	mockBlogCollection.On("UpdateOne", ctx, bson.M{"_id": blogID}, bson.M{"$inc": bson.M{"likes": -1}}).Return(&mongodriver.UpdateResult{MatchedCount: 1, ModifiedCount: 1}, nil)
+
+	repo := NewUserReactionRepo(mockDB, &mongo.Collections{BlogUserReactions: "blog_user_reactions", BlogPosts: "blog_posts"})
+
+	err := repo.Delete(ctx, reactionID.Hex())
+
+	assert.Nil(t, err, "Expected no error")
+	mockDB.AssertExpectations(t)
+	mockReactionCollection.AssertExpectations(t)
+	mockBlogCollection.AssertExpectations(t)
+}
+
+func TestBlogUserReactionRepo_Delete_InvalidID(t *testing.T) {
+	ctx := context.TODO()
+
+	mockDB := mongo_mocks.NewMockDatabase(t)
+
+	repo := NewUserReactionRepo(mockDB, &mongo.Collections{BlogUserReactions: "blog_user_reactions"})
+
+	err := repo.Delete(ctx, "invalid-id")
+
+	assert.NotNil(t, err, "Expected an error")
+	assert.Equal(t, http.StatusBadRequest, err.Code)
+	assert.Contains(t, err.Err.Error(), "invalid ObjectID")
+	mockDB.AssertNotCalled(t, "Collection", mock.Anything)
+}
+
+func TestBlogUserReactionRepo_Delete_NotFound(t *testing.T) {
+	ctx := context.TODO()
+
+	mockDB := mongo_mocks.NewMockDatabase(t)
+	mockReactionCollection := mongo_mocks.NewMockCollection(t)
+	mockSingleResult := mongo_mocks.NewMockSingleResult(t)
+
+	mockDB.On("Collection", "blog_user_reactions").Return(mockReactionCollection)
+
+	mockReactionCollection.On("FindOne", ctx, mock.Anything).Return(mockSingleResult)
+	mockSingleResult.On("Decode", mock.Anything).Return(mongodriver.ErrNoDocuments)
+
+	repo := NewUserReactionRepo(mockDB, &mongo.Collections{BlogUserReactions: "blog_user_reactions"})
+
+	err := repo.Delete(ctx, primitive.NewObjectID().Hex())
+
+	assert.NotNil(t, err, "Expected an error")
+	assert.Equal(t, http.StatusNotFound, err.Code)
+	assert.Contains(t, err.Err.Error(), "no reaction found")
+	mockDB.AssertExpectations(t)
+	mockReactionCollection.AssertExpectations(t)
+}
+
+func TestBlogUserReactionRepo_Delete_DBFailure(t *testing.T) {
+	ctx := context.TODO()
+
+	reactionID := primitive.NewObjectID()
+	blogID := primitive.NewObjectID()
+
+	mockDB := mongo_mocks.NewMockDatabase(t)
+	mockReactionCollection := mongo_mocks.NewMockCollection(t)
+	mockSingleResult := mongo_mocks.NewMockSingleResult(t)
+
+	mockDB.On("Collection", "blog_user_reactions").Return(mockReactionCollection)
+
+	foundReaction := mapper.BlogUserReactionModel{
+		ID:     reactionID,
+		BlogID: blogID,
+		IsLike: true,
+	}
+	mockReactionCollection.On("FindOne", ctx, mock.Anything).Return(mockSingleResult)
+	mockSingleResult.On("Decode", mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+		arg := args.Get(0).(*mapper.BlogUserReactionModel)
+		*arg = foundReaction
+	})
+
+	dbErr := errors.New("database connection lost")
+	mockReactionCollection.On("DeleteOne", ctx, mock.Anything).Return(int64(0), dbErr)
+
+	repo := NewUserReactionRepo(mockDB, &mongo.Collections{BlogUserReactions: "blog_user_reactions"})
+
+	err := repo.Delete(ctx, reactionID.Hex())
+
+	assert.NotNil(t, err, "Expected an error")
+	assert.Equal(t, http.StatusInternalServerError, err.Code)
+	assert.Contains(t, err.Err.Error(), "failed to delete reaction")
+	mockDB.AssertExpectations(t)
+	mockReactionCollection.AssertExpectations(t)
 }

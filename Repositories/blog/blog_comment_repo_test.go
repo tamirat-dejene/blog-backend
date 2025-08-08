@@ -143,17 +143,17 @@ func TestCommentRepo_Delete_NotFound(t *testing.T) {
 
 	mockDB.On("Collection", blogCommentCollection).Return(mockCollection)
 
-	repo := NewBlogPostRepo(mockDB, &mongo.Collections{BlogComments: blogCommentCollection})
+	repo := NewBlogCommentRepository(mockDB, &mongo.Collections{BlogComments: blogCommentCollection})
 
 	id := primitive.NewObjectID().Hex()
 
-	mockCollection.On("DeleteOne", ctx, mock.Anything).Return(int64(0), mongodriver.ErrNoDocuments)
+	mockCollection.On("DeleteOne", ctx, mock.Anything).Return(int64(0), nil)
 
 	err := repo.Delete(ctx, id)
 
 	assert.NotNil(t, err, "Expected error on delete")
 	assert.Equal(t, http.StatusNotFound, err.Code, "Expected error code to be Not Found")
-	assert.Contains(t, err.Err.Error(), "not found", "Expected error message to indicate not found")
+	assert.Contains(t, err.Err.Error(), "comment not found", "Expected error message to indicate not found")
 
 	mockDB.AssertExpectations(t)
 	mockCollection.AssertExpectations(t)
