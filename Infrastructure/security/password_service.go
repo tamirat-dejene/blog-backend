@@ -31,3 +31,15 @@ func ValidateTokenHash(tokenHash, token string) (bool, error) {
 	}
 	return hashedToken == tokenHash, nil
 }
+
+// hash OTP code
+func HashOTPCode(code string) string {
+	hash := sha256.Sum256([]byte(code))
+	return hex.EncodeToString(hash[:])
+}
+
+// verify OTP code
+func VerifyOTPCode(hashedCode, code string) bool {
+	hashedInputCode := HashOTPCode(code)
+	return hashedInputCode == hashedCode
+}

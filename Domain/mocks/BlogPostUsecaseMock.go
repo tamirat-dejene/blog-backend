@@ -308,22 +308,24 @@ func (_c *MockBlogPostUsecase_GetBlogs_Call) RunAndReturn(run func(ctx context.C
 }
 
 // UpdateBlog provides a mock function for the type MockBlogPostUsecase
-func (_mock *MockBlogPostUsecase) UpdateBlog(ctx context.Context, id string, blog domain.BlogPost) (domain.BlogPost, *domain.DomainError) {
+func (_mock *MockBlogPostUsecase) UpdateBlog(ctx context.Context, id string, blog domain.BlogPost) (*domain.BlogPost, *domain.DomainError) {
 	ret := _mock.Called(ctx, id, blog)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateBlog")
 	}
 
-	var r0 domain.BlogPost
+	var r0 *domain.BlogPost
 	var r1 *domain.DomainError
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, domain.BlogPost) (domain.BlogPost, *domain.DomainError)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, domain.BlogPost) (*domain.BlogPost, *domain.DomainError)); ok {
 		return returnFunc(ctx, id, blog)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, domain.BlogPost) domain.BlogPost); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, domain.BlogPost) *domain.BlogPost); ok {
 		r0 = returnFunc(ctx, id, blog)
 	} else {
-		r0 = ret.Get(0).(domain.BlogPost)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.BlogPost)
+		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, string, domain.BlogPost) *domain.DomainError); ok {
 		r1 = returnFunc(ctx, id, blog)
@@ -371,12 +373,12 @@ func (_c *MockBlogPostUsecase_UpdateBlog_Call) Run(run func(ctx context.Context,
 	return _c
 }
 
-func (_c *MockBlogPostUsecase_UpdateBlog_Call) Return(blogPost domain.BlogPost, domainError *domain.DomainError) *MockBlogPostUsecase_UpdateBlog_Call {
+func (_c *MockBlogPostUsecase_UpdateBlog_Call) Return(blogPost *domain.BlogPost, domainError *domain.DomainError) *MockBlogPostUsecase_UpdateBlog_Call {
 	_c.Call.Return(blogPost, domainError)
 	return _c
 }
 
-func (_c *MockBlogPostUsecase_UpdateBlog_Call) RunAndReturn(run func(ctx context.Context, id string, blog domain.BlogPost) (domain.BlogPost, *domain.DomainError)) *MockBlogPostUsecase_UpdateBlog_Call {
+func (_c *MockBlogPostUsecase_UpdateBlog_Call) RunAndReturn(run func(ctx context.Context, id string, blog domain.BlogPost) (*domain.BlogPost, *domain.DomainError)) *MockBlogPostUsecase_UpdateBlog_Call {
 	_c.Call.Return(run)
 	return _c
 }

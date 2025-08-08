@@ -44,6 +44,13 @@ func AuthMiddleware(env bootstrap.Env) gin.HandlerFunc {
 			c.Set("role", role.(string))
 		}
 
+		// set is_verified in context
+		isVerified := claims["is_verified"].(bool)
+		if isVerified {
+			c.Set("is_verified", true)
+		} else {
+			c.Set("is_verified", false)
+		}
 		c.Next()
 	}
 }
@@ -63,6 +70,17 @@ func AdminOnly() gin.HandlerFunc {
 		role := c.GetString("role")
 		if role != string(domain.RoleAdmin) && role != string(domain.RoleSuperAdmin) {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "admin or super_admin only"})
+			return
+		}
+		c.Next()
+	}
+}
+
+func VerifiedUserOnly() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		IsVerified := c.GetBool("is_verified")
+		if !IsVerified {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "user not verified"})
 			return
 		}
 		c.Next()

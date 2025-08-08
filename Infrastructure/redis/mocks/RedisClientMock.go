@@ -6,6 +6,7 @@ package redis_mocks
 
 import (
 	"context"
+	redis0 "g6/blog-api/Infrastructure/redis"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -401,6 +402,50 @@ func (_c *MockRedisClient_Get_Call) RunAndReturn(run func(ctx context.Context, k
 	return _c
 }
 
+// GetCacheExpiry provides a mock function for the type MockRedisClient
+func (_mock *MockRedisClient) GetCacheExpiry() time.Duration {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetCacheExpiry")
+	}
+
+	var r0 time.Duration
+	if returnFunc, ok := ret.Get(0).(func() time.Duration); ok {
+		r0 = returnFunc()
+	} else {
+		r0 = ret.Get(0).(time.Duration)
+	}
+	return r0
+}
+
+// MockRedisClient_GetCacheExpiry_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetCacheExpiry'
+type MockRedisClient_GetCacheExpiry_Call struct {
+	*mock.Call
+}
+
+// GetCacheExpiry is a helper method to define mock.On call
+func (_e *MockRedisClient_Expecter) GetCacheExpiry() *MockRedisClient_GetCacheExpiry_Call {
+	return &MockRedisClient_GetCacheExpiry_Call{Call: _e.mock.On("GetCacheExpiry")}
+}
+
+func (_c *MockRedisClient_GetCacheExpiry_Call) Run(run func()) *MockRedisClient_GetCacheExpiry_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockRedisClient_GetCacheExpiry_Call) Return(duration time.Duration) *MockRedisClient_GetCacheExpiry_Call {
+	_c.Call.Return(duration)
+	return _c
+}
+
+func (_c *MockRedisClient_GetCacheExpiry_Call) RunAndReturn(run func() time.Duration) *MockRedisClient_GetCacheExpiry_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetClient provides a mock function for the type MockRedisClient
 func (_mock *MockRedisClient) GetClient() *redis.Client {
 	ret := _mock.Called()
@@ -513,8 +558,54 @@ func (_c *MockRedisClient_Increment_Call) RunAndReturn(run func(ctx context.Cont
 	return _c
 }
 
+// Service provides a mock function for the type MockRedisClient
+func (_mock *MockRedisClient) Service() *redis0.RedisService {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Service")
+	}
+
+	var r0 *redis0.RedisService
+	if returnFunc, ok := ret.Get(0).(func() *redis0.RedisService); ok {
+		r0 = returnFunc()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*redis0.RedisService)
+		}
+	}
+	return r0
+}
+
+// MockRedisClient_Service_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Service'
+type MockRedisClient_Service_Call struct {
+	*mock.Call
+}
+
+// Service is a helper method to define mock.On call
+func (_e *MockRedisClient_Expecter) Service() *MockRedisClient_Service_Call {
+	return &MockRedisClient_Service_Call{Call: _e.mock.On("Service")}
+}
+
+func (_c *MockRedisClient_Service_Call) Run(run func()) *MockRedisClient_Service_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockRedisClient_Service_Call) Return(redisService *redis0.RedisService) *MockRedisClient_Service_Call {
+	_c.Call.Return(redisService)
+	return _c
+}
+
+func (_c *MockRedisClient_Service_Call) RunAndReturn(run func() *redis0.RedisService) *MockRedisClient_Service_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Set provides a mock function for the type MockRedisClient
-func (_mock *MockRedisClient) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
+func (_mock *MockRedisClient) Set(ctx context.Context, key string, value any, expiration time.Duration) error {
 	ret := _mock.Called(ctx, key, value, expiration)
 
 	if len(ret) == 0 {
@@ -522,7 +613,7 @@ func (_mock *MockRedisClient) Set(ctx context.Context, key string, value interfa
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, interface{}, time.Duration) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, any, time.Duration) error); ok {
 		r0 = returnFunc(ctx, key, value, expiration)
 	} else {
 		r0 = ret.Error(0)
@@ -538,13 +629,13 @@ type MockRedisClient_Set_Call struct {
 // Set is a helper method to define mock.On call
 //   - ctx context.Context
 //   - key string
-//   - value interface{}
+//   - value any
 //   - expiration time.Duration
 func (_e *MockRedisClient_Expecter) Set(ctx interface{}, key interface{}, value interface{}, expiration interface{}) *MockRedisClient_Set_Call {
 	return &MockRedisClient_Set_Call{Call: _e.mock.On("Set", ctx, key, value, expiration)}
 }
 
-func (_c *MockRedisClient_Set_Call) Run(run func(ctx context.Context, key string, value interface{}, expiration time.Duration)) *MockRedisClient_Set_Call {
+func (_c *MockRedisClient_Set_Call) Run(run func(ctx context.Context, key string, value any, expiration time.Duration)) *MockRedisClient_Set_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -554,9 +645,9 @@ func (_c *MockRedisClient_Set_Call) Run(run func(ctx context.Context, key string
 		if args[1] != nil {
 			arg1 = args[1].(string)
 		}
-		var arg2 interface{}
+		var arg2 any
 		if args[2] != nil {
-			arg2 = args[2].(interface{})
+			arg2 = args[2].(any)
 		}
 		var arg3 time.Duration
 		if args[3] != nil {
@@ -577,7 +668,7 @@ func (_c *MockRedisClient_Set_Call) Return(err error) *MockRedisClient_Set_Call 
 	return _c
 }
 
-func (_c *MockRedisClient_Set_Call) RunAndReturn(run func(ctx context.Context, key string, value interface{}, expiration time.Duration) error) *MockRedisClient_Set_Call {
+func (_c *MockRedisClient_Set_Call) RunAndReturn(run func(ctx context.Context, key string, value any, expiration time.Duration) error) *MockRedisClient_Set_Call {
 	_c.Call.Return(run)
 	return _c
 }

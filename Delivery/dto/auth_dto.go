@@ -31,3 +31,7 @@ type ChangeRoleRequest struct {
 	UserID string `json:"user_id" validate:"required"`
 	Role   string `json:"role" validate:"required,oneof=admin user superadmin"`
 }
+
+type VerifyEmailRequest struct {
+	Email string `json:"email" validate:"required,email"`
+}

@@ -52,6 +52,10 @@ func NewAuthRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Database) 
 		time.Duration(env.PasswordResetExpiry)*time.Minute,
 	)
 
+	// otp usecase and otp repository
+	otpRepo := repositories.NewOTPRepository(db, env.OtpCollection)
+	otpUsecase := usercase.NewOTPUsecase(otpRepo, emailService, ctxTimeout, time.Duration(env.OtpExpireMinutes)*time.Minute, env.OtpMaximumAttempts, env.SecretSalt)
+
 	// storage services
 	imageKitStorageService := storage.NewImageKitStorage(
 		env.ImageKitPrivateKey,
@@ -61,6 +65,7 @@ func NewAuthRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Database) 
 
 	authController := controllers.AuthController{
 		UserUsecase:          usercase.NewUserUsecase(userRepo, imageKitStorageService, ctxTimeout),
+		OTP:                  otpUsecase,
 		AuthService:          authService,
 		RefreshTokenUsecase:  usercase.NewRefreshTokenUsecase(repositories.NewRefreshTokenRepository(db, env.RefreshTokenCollection)),
 		PasswordResetUsecase: passwordResetUsecase,
@@ -75,8 +80,17 @@ func NewAuthRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Database) 
 		auth.POST("/forgot-password", authController.ForgotPasswordRequest)
 		auth.POST("/reset-password", authController.ResetPasswordRequest)
 		auth.POST("/refresh", authController.RefreshToken)
-		auth.PATCH("/change-role", middleware.AuthMiddleware(*env), authController.ChangeRoleRequest)
-		auth.GET("/google/login",authController.GoogleLogin)
-		auth.GET("/google/callback",authController.GoogleCallback)
+
+		auth.GET("/google/login", authController.GoogleLogin)
+		auth.GET("/google/callback", authController.GoogleCallback)
+
+	}
+	authHead := auth
+	authHead.Use(middleware.AuthMiddleware(*env))
+	{
+		authHead.POST("/verify-email", authController.VerifyEmailRequest)
+		authHead.POST("/resend-otp", authController.ResendOTPRequest)
+		authHead.PATCH("/verify-otp", authController.VerifyOTPRequest)
+		authHead.PATCH("/change-role", authController.ChangeRoleRequest)
 	}
 }

@@ -168,7 +168,7 @@ func (_c *MockBlogPostRepository_Delete_Call) RunAndReturn(run func(ctx context.
 }
 
 // Get provides a mock function for the type MockBlogPostRepository
-func (_mock *MockBlogPostRepository) Get(ctx context.Context, filter *domain.BlogPostFilter) ([]domain.BlogPostsPage, *domain.DomainError) {
+func (_mock *MockBlogPostRepository) Get(ctx context.Context, filter *domain.BlogPostFilter) ([]domain.BlogPostsPage, *string, *domain.DomainError) {
 	ret := _mock.Called(ctx, filter)
 
 	if len(ret) == 0 {
@@ -176,8 +176,9 @@ func (_mock *MockBlogPostRepository) Get(ctx context.Context, filter *domain.Blo
 	}
 
 	var r0 []domain.BlogPostsPage
-	var r1 *domain.DomainError
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *domain.BlogPostFilter) ([]domain.BlogPostsPage, *domain.DomainError)); ok {
+	var r1 *string
+	var r2 *domain.DomainError
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *domain.BlogPostFilter) ([]domain.BlogPostsPage, *string, *domain.DomainError)); ok {
 		return returnFunc(ctx, filter)
 	}
 	if returnFunc, ok := ret.Get(0).(func(context.Context, *domain.BlogPostFilter) []domain.BlogPostsPage); ok {
@@ -187,14 +188,21 @@ func (_mock *MockBlogPostRepository) Get(ctx context.Context, filter *domain.Blo
 			r0 = ret.Get(0).([]domain.BlogPostsPage)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, *domain.BlogPostFilter) *domain.DomainError); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, *domain.BlogPostFilter) *string); ok {
 		r1 = returnFunc(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*domain.DomainError)
+			r1 = ret.Get(1).(*string)
 		}
 	}
-	return r0, r1
+	if returnFunc, ok := ret.Get(2).(func(context.Context, *domain.BlogPostFilter) *domain.DomainError); ok {
+		r2 = returnFunc(ctx, filter)
+	} else {
+		if ret.Get(2) != nil {
+			r2 = ret.Get(2).(*domain.DomainError)
+		}
+	}
+	return r0, r1, r2
 }
 
 // MockBlogPostRepository_Get_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Get'
@@ -227,12 +235,12 @@ func (_c *MockBlogPostRepository_Get_Call) Run(run func(ctx context.Context, fil
 	return _c
 }
 
-func (_c *MockBlogPostRepository_Get_Call) Return(blogPostsPages []domain.BlogPostsPage, domainError *domain.DomainError) *MockBlogPostRepository_Get_Call {
-	_c.Call.Return(blogPostsPages, domainError)
+func (_c *MockBlogPostRepository_Get_Call) Return(blogPostsPages []domain.BlogPostsPage, s *string, domainError *domain.DomainError) *MockBlogPostRepository_Get_Call {
+	_c.Call.Return(blogPostsPages, s, domainError)
 	return _c
 }
 
-func (_c *MockBlogPostRepository_Get_Call) RunAndReturn(run func(ctx context.Context, filter *domain.BlogPostFilter) ([]domain.BlogPostsPage, *domain.DomainError)) *MockBlogPostRepository_Get_Call {
+func (_c *MockBlogPostRepository_Get_Call) RunAndReturn(run func(ctx context.Context, filter *domain.BlogPostFilter) ([]domain.BlogPostsPage, *string, *domain.DomainError)) *MockBlogPostRepository_Get_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -307,23 +315,165 @@ func (_c *MockBlogPostRepository_GetBlogByID_Call) RunAndReturn(run func(ctx con
 	return _c
 }
 
+// IncrementViewCount provides a mock function for the type MockBlogPostRepository
+func (_mock *MockBlogPostRepository) IncrementViewCount(ctx context.Context, id string) (*domain.BlogPost, *domain.DomainError) {
+	ret := _mock.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for IncrementViewCount")
+	}
+
+	var r0 *domain.BlogPost
+	var r1 *domain.DomainError
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (*domain.BlogPost, *domain.DomainError)); ok {
+		return returnFunc(ctx, id)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) *domain.BlogPost); ok {
+		r0 = returnFunc(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.BlogPost)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) *domain.DomainError); ok {
+		r1 = returnFunc(ctx, id)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*domain.DomainError)
+		}
+	}
+	return r0, r1
+}
+
+// MockBlogPostRepository_IncrementViewCount_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IncrementViewCount'
+type MockBlogPostRepository_IncrementViewCount_Call struct {
+	*mock.Call
+}
+
+// IncrementViewCount is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id string
+func (_e *MockBlogPostRepository_Expecter) IncrementViewCount(ctx interface{}, id interface{}) *MockBlogPostRepository_IncrementViewCount_Call {
+	return &MockBlogPostRepository_IncrementViewCount_Call{Call: _e.mock.On("IncrementViewCount", ctx, id)}
+}
+
+func (_c *MockBlogPostRepository_IncrementViewCount_Call) Run(run func(ctx context.Context, id string)) *MockBlogPostRepository_IncrementViewCount_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockBlogPostRepository_IncrementViewCount_Call) Return(blogPost *domain.BlogPost, domainError *domain.DomainError) *MockBlogPostRepository_IncrementViewCount_Call {
+	_c.Call.Return(blogPost, domainError)
+	return _c
+}
+
+func (_c *MockBlogPostRepository_IncrementViewCount_Call) RunAndReturn(run func(ctx context.Context, id string) (*domain.BlogPost, *domain.DomainError)) *MockBlogPostRepository_IncrementViewCount_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// RefreshPopularityScore provides a mock function for the type MockBlogPostRepository
+func (_mock *MockBlogPostRepository) RefreshPopularityScore(ctx context.Context, id string) (*domain.BlogPost, *domain.DomainError) {
+	ret := _mock.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RefreshPopularityScore")
+	}
+
+	var r0 *domain.BlogPost
+	var r1 *domain.DomainError
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (*domain.BlogPost, *domain.DomainError)); ok {
+		return returnFunc(ctx, id)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) *domain.BlogPost); ok {
+		r0 = returnFunc(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.BlogPost)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) *domain.DomainError); ok {
+		r1 = returnFunc(ctx, id)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*domain.DomainError)
+		}
+	}
+	return r0, r1
+}
+
+// MockBlogPostRepository_RefreshPopularityScore_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RefreshPopularityScore'
+type MockBlogPostRepository_RefreshPopularityScore_Call struct {
+	*mock.Call
+}
+
+// RefreshPopularityScore is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id string
+func (_e *MockBlogPostRepository_Expecter) RefreshPopularityScore(ctx interface{}, id interface{}) *MockBlogPostRepository_RefreshPopularityScore_Call {
+	return &MockBlogPostRepository_RefreshPopularityScore_Call{Call: _e.mock.On("RefreshPopularityScore", ctx, id)}
+}
+
+func (_c *MockBlogPostRepository_RefreshPopularityScore_Call) Run(run func(ctx context.Context, id string)) *MockBlogPostRepository_RefreshPopularityScore_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockBlogPostRepository_RefreshPopularityScore_Call) Return(blogPost *domain.BlogPost, domainError *domain.DomainError) *MockBlogPostRepository_RefreshPopularityScore_Call {
+	_c.Call.Return(blogPost, domainError)
+	return _c
+}
+
+func (_c *MockBlogPostRepository_RefreshPopularityScore_Call) RunAndReturn(run func(ctx context.Context, id string) (*domain.BlogPost, *domain.DomainError)) *MockBlogPostRepository_RefreshPopularityScore_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Update provides a mock function for the type MockBlogPostRepository
-func (_mock *MockBlogPostRepository) Update(ctx context.Context, id string, blog domain.BlogPost) (domain.BlogPost, *domain.DomainError) {
+func (_mock *MockBlogPostRepository) Update(ctx context.Context, id string, blog domain.BlogPost) (*domain.BlogPost, *domain.DomainError) {
 	ret := _mock.Called(ctx, id, blog)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Update")
 	}
 
-	var r0 domain.BlogPost
+	var r0 *domain.BlogPost
 	var r1 *domain.DomainError
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, domain.BlogPost) (domain.BlogPost, *domain.DomainError)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, domain.BlogPost) (*domain.BlogPost, *domain.DomainError)); ok {
 		return returnFunc(ctx, id, blog)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, domain.BlogPost) domain.BlogPost); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, domain.BlogPost) *domain.BlogPost); ok {
 		r0 = returnFunc(ctx, id, blog)
 	} else {
-		r0 = ret.Get(0).(domain.BlogPost)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.BlogPost)
+		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, string, domain.BlogPost) *domain.DomainError); ok {
 		r1 = returnFunc(ctx, id, blog)
@@ -371,12 +521,170 @@ func (_c *MockBlogPostRepository_Update_Call) Run(run func(ctx context.Context, 
 	return _c
 }
 
-func (_c *MockBlogPostRepository_Update_Call) Return(blogPost domain.BlogPost, domainError *domain.DomainError) *MockBlogPostRepository_Update_Call {
+func (_c *MockBlogPostRepository_Update_Call) Return(blogPost *domain.BlogPost, domainError *domain.DomainError) *MockBlogPostRepository_Update_Call {
 	_c.Call.Return(blogPost, domainError)
 	return _c
 }
 
-func (_c *MockBlogPostRepository_Update_Call) RunAndReturn(run func(ctx context.Context, id string, blog domain.BlogPost) (domain.BlogPost, *domain.DomainError)) *MockBlogPostRepository_Update_Call {
+func (_c *MockBlogPostRepository_Update_Call) RunAndReturn(run func(ctx context.Context, id string, blog domain.BlogPost) (*domain.BlogPost, *domain.DomainError)) *MockBlogPostRepository_Update_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdateCommentCount provides a mock function for the type MockBlogPostRepository
+func (_mock *MockBlogPostRepository) UpdateCommentCount(ctx context.Context, id string, increment bool) (*domain.BlogPost, *domain.DomainError) {
+	ret := _mock.Called(ctx, id, increment)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateCommentCount")
+	}
+
+	var r0 *domain.BlogPost
+	var r1 *domain.DomainError
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, bool) (*domain.BlogPost, *domain.DomainError)); ok {
+		return returnFunc(ctx, id, increment)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, bool) *domain.BlogPost); ok {
+		r0 = returnFunc(ctx, id, increment)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.BlogPost)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string, bool) *domain.DomainError); ok {
+		r1 = returnFunc(ctx, id, increment)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*domain.DomainError)
+		}
+	}
+	return r0, r1
+}
+
+// MockBlogPostRepository_UpdateCommentCount_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateCommentCount'
+type MockBlogPostRepository_UpdateCommentCount_Call struct {
+	*mock.Call
+}
+
+// UpdateCommentCount is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id string
+//   - increment bool
+func (_e *MockBlogPostRepository_Expecter) UpdateCommentCount(ctx interface{}, id interface{}, increment interface{}) *MockBlogPostRepository_UpdateCommentCount_Call {
+	return &MockBlogPostRepository_UpdateCommentCount_Call{Call: _e.mock.On("UpdateCommentCount", ctx, id, increment)}
+}
+
+func (_c *MockBlogPostRepository_UpdateCommentCount_Call) Run(run func(ctx context.Context, id string, increment bool)) *MockBlogPostRepository_UpdateCommentCount_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		var arg2 bool
+		if args[2] != nil {
+			arg2 = args[2].(bool)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockBlogPostRepository_UpdateCommentCount_Call) Return(blogPost *domain.BlogPost, domainError *domain.DomainError) *MockBlogPostRepository_UpdateCommentCount_Call {
+	_c.Call.Return(blogPost, domainError)
+	return _c
+}
+
+func (_c *MockBlogPostRepository_UpdateCommentCount_Call) RunAndReturn(run func(ctx context.Context, id string, increment bool) (*domain.BlogPost, *domain.DomainError)) *MockBlogPostRepository_UpdateCommentCount_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdateReactionCount provides a mock function for the type MockBlogPostRepository
+func (_mock *MockBlogPostRepository) UpdateReactionCount(ctx context.Context, is_like bool, id string, increment bool) (*domain.BlogPost, *domain.DomainError) {
+	ret := _mock.Called(ctx, is_like, id, increment)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateReactionCount")
+	}
+
+	var r0 *domain.BlogPost
+	var r1 *domain.DomainError
+	if returnFunc, ok := ret.Get(0).(func(context.Context, bool, string, bool) (*domain.BlogPost, *domain.DomainError)); ok {
+		return returnFunc(ctx, is_like, id, increment)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, bool, string, bool) *domain.BlogPost); ok {
+		r0 = returnFunc(ctx, is_like, id, increment)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.BlogPost)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, bool, string, bool) *domain.DomainError); ok {
+		r1 = returnFunc(ctx, is_like, id, increment)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*domain.DomainError)
+		}
+	}
+	return r0, r1
+}
+
+// MockBlogPostRepository_UpdateReactionCount_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateReactionCount'
+type MockBlogPostRepository_UpdateReactionCount_Call struct {
+	*mock.Call
+}
+
+// UpdateReactionCount is a helper method to define mock.On call
+//   - ctx context.Context
+//   - is_like bool
+//   - id string
+//   - increment bool
+func (_e *MockBlogPostRepository_Expecter) UpdateReactionCount(ctx interface{}, is_like interface{}, id interface{}, increment interface{}) *MockBlogPostRepository_UpdateReactionCount_Call {
+	return &MockBlogPostRepository_UpdateReactionCount_Call{Call: _e.mock.On("UpdateReactionCount", ctx, is_like, id, increment)}
+}
+
+func (_c *MockBlogPostRepository_UpdateReactionCount_Call) Run(run func(ctx context.Context, is_like bool, id string, increment bool)) *MockBlogPostRepository_UpdateReactionCount_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 bool
+		if args[1] != nil {
+			arg1 = args[1].(bool)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		var arg3 bool
+		if args[3] != nil {
+			arg3 = args[3].(bool)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
+	})
+	return _c
+}
+
+func (_c *MockBlogPostRepository_UpdateReactionCount_Call) Return(blogPost *domain.BlogPost, domainError *domain.DomainError) *MockBlogPostRepository_UpdateReactionCount_Call {
+	_c.Call.Return(blogPost, domainError)
+	return _c
+}
+
+func (_c *MockBlogPostRepository_UpdateReactionCount_Call) RunAndReturn(run func(ctx context.Context, is_like bool, id string, increment bool) (*domain.BlogPost, *domain.DomainError)) *MockBlogPostRepository_UpdateReactionCount_Call {
 	_c.Call.Return(run)
 	return _c
 }
