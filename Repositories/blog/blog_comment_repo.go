@@ -228,7 +228,6 @@ func (b *blogCommentRepository) Update(ctx context.Context, id string, comment *
 	return updatedComment, nil
 }
 
-
 func NewBlogCommentRepository(db mongo.Database, collections *mongo.Collections) domain.BlogCommentRepository {
 	return &blogCommentRepository{
 		db:          db,

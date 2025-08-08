@@ -144,7 +144,8 @@ func (u *BlogUserReactionRepo) Create(ctx context.Context, reaction *domain.Blog
 		}
 	}
 
-	// Update the return object with new timestamp
+	// Update the return object with new timestamp and existing id
+	reaction.ID = existing.ID.Hex()
 	reaction.CreatedAt = time.Now()
 	return reaction, nil
 }
@@ -193,7 +194,7 @@ func (u *BlogUserReactionRepo) Delete(ctx context.Context, id string) *domain.Do
 	_, err = u.db.Collection(u.collections.BlogPosts).UpdateOne(ctx, bson.M{"_id": reaction.BlogID}, bson.M{
 		"$inc": bson.M{decField: -1},
 	})
-	
+
 	if err != nil {
 		return &domain.DomainError{
 			Err:  fmt.Errorf("failed to decrement %s count: %w", decField, err),
