@@ -93,10 +93,11 @@ type BlogUserReactionRepository interface {
 // Usecase Interfaces define the business logic for handling blogs, comments, and user reactions.
 type BlogPostUsecase interface {
 	GetBlogs(ctx context.Context, filter *BlogPostFilter) ([]BlogPostsPage, *DomainError)
-	GetBlogByID(ctx context.Context, id string) (*BlogPost, *DomainError)
+	GetBlogByID(ctx context.Context, user_id, blog_id string) (*BlogPost, *DomainError)
 	CreateBlog(ctx context.Context, blog *BlogPost) (*BlogPost, *DomainError)
 	UpdateBlog(ctx context.Context, id string, blog BlogPost) (*BlogPost, *DomainError)
 	DeleteBlog(ctx context.Context, id string) *DomainError
+	IncrementViewCountWithLimit(ctx context.Context, user_id, blog_id string) (*DomainError)
 }
 
 type BlogCommentUsecase interface {

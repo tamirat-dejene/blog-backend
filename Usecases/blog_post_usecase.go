@@ -94,11 +94,11 @@ func (b *blogPostUsecase) GetBlogs(ctx context.Context, filter *domain.BlogPostF
 }
 
 // GetBlogByID implements domain.BlogUsecase.
-func (b *blogPostUsecase) GetBlogByID(ctx context.Context, id string) (*domain.BlogPost, *domain.DomainError) {
+func (b *blogPostUsecase) GetBlogByID(ctx context.Context, user_id, blog_id string) (*domain.BlogPost, *domain.DomainError) {
 	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
 	defer cancel()
 
-	redisKey := b.redisClient.Service().GenerateBlogPostKey(id)
+	redisKey := b.redisClient.Service().GenerateBlogPostKey(blog_id)
 	cachedBlog, err := b.redisClient.Get(ctx, redisKey)
 
 	var blog *domain.BlogPost
@@ -107,10 +107,10 @@ func (b *blogPostUsecase) GetBlogByID(ctx context.Context, id string) (*domain.B
 	if err != nil || cachedBlog == "" {
 		fmt.Println("Cache miss for key:", redisKey)
 		// Fetch from DB
-		blog, err1 = b.blogPostRepo.GetBlogByID(c, id)
+		blog, err1 = b.blogPostRepo.GetBlogByID(c, blog_id)
 		if err1 != nil {
 			return nil, err1
-		}
+		}	
 
 		// Serialize and cache it
 		blogModel := &mapper.BlogPostModel{}
@@ -135,15 +135,31 @@ func (b *blogPostUsecase) GetBlogByID(ctx context.Context, id string) (*domain.B
 				Code: http.StatusInternalServerError,
 			}
 		}
+	} else {
+		fmt.Println("Cache hit for key:", redisKey)
+		// Deserialize the cached blog post
+		blogModel, err := utils.DeserializeBlogPost(cachedBlog)
+		if err != nil {
+			return nil, &domain.DomainError{
+				Err:  errors.New("failed to deserialize blog post"),
+				Code: http.StatusInternalServerError,
+			}
+		}
+
+		// Convert the model to domain object
+		blog = blogModel.ToDomain()
 	}
 
 	// Increment view count (can be async in future)
-	if _, err := b.blogPostRepo.IncrementViewCount(c, id); err != nil {
-		return nil, err
-	}
+	err12 := b.IncrementViewCountWithLimit(c, user_id, blog_id)
 
 	// Update popularity score
-	return b.blogPostRepo.RefreshPopularityScore(c, id)
+	if err12 != nil {
+		return b.blogPostRepo.RefreshPopularityScore(c, blog_id)
+	}
+
+	return blog, nil
+
 }
 
 // UpdateBlog implements domain.BlogUsecase.
@@ -167,6 +183,47 @@ func (b *blogPostUsecase) UpdateBlog(ctx context.Context, id string, blog domain
 	}
 
 	return updated, nil
+}
+
+// Users can view a blog only once, within three hours of the last view to prevent excessive view count increments.
+// track user: "userId+blogId:blogId" to allow user view multiple blogs
+func (b *blogPostUsecase) IncrementViewCountWithLimit(ctx context.Context, user_id, blog_id string) (*domain.DomainError) {
+	c, cancel := context.WithTimeout(ctx, b.ctxtimeout)
+	defer cancel()
+
+	// Compose a unique key for user-blog view tracking
+	viewKey := fmt.Sprintf("view:%s:%s", user_id, blog_id)
+
+	// Check if the user has viewed this blog in the last 3 hours
+	exists, err := b.redisClient.Exists(ctx, viewKey)
+	if err != nil {
+		return &domain.DomainError{
+			Err:  fmt.Errorf("failed to check view limit: %w", err),
+			Code: http.StatusInternalServerError,
+		}
+	}
+	if exists {
+		return &domain.DomainError{
+			Err:  errors.New("view already counted within the last 3 hours"),
+			Code: http.StatusTooManyRequests,
+		}
+	}
+
+	// Increment the view count in the database
+	_, derr := b.blogPostRepo.IncrementViewCount(c, blog_id)
+	if derr != nil {
+		return derr
+	}
+
+	// Set the view key in Redis with a 3-hour expiry
+	if err := b.redisClient.Set(ctx, viewKey, "1", 3*time.Hour); err != nil {
+		return &domain.DomainError{
+			Err:  fmt.Errorf("failed to set view limit: %w", err),
+			Code: http.StatusInternalServerError,
+		}
+	}
+
+	return nil
 }
 
 // NewBlogPostUsecase creates a new instance of blog post usecase.
