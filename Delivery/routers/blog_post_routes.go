@@ -28,9 +28,11 @@ func NewBlogRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Database) 
 		Env: env,
 	}
 
-	blogGroup.GET("/", middleware.AuthMiddleware(*env), blog_post_controller.GetBlogPosts) // Get all blogs with optional filters
-	blogGroup.GET("/:id", middleware.AuthMiddleware(*env), blog_post_controller.GetBlogPostByID)                        // Get a single blog by ID
-	blogGroup.POST("/", middleware.AuthMiddleware(*env), blog_post_controller.CreateBlog)                               // Create a new blog
-	blogGroup.PUT("/:id", middleware.AuthMiddleware(*env), blog_post_controller.UpdateBlog)                             // Update an existing blog
-	blogGroup.DELETE("/:id", middleware.AuthMiddleware(*env), blog_post_controller.DeleteBlog)                          // Delete a blog by ID
+	// Routes for managing blog posts
+	blogGroup.Use(middleware.AuthMiddleware(*env))
+	blogGroup.GET("/", blog_post_controller.GetBlogPosts)                                    // Get all blogs with optional filters
+	blogGroup.GET("/:id", blog_post_controller.GetBlogPostByID)                              // Get a single blog by ID
+	blogGroup.POST("/", middleware.VerifiedUserOnly(), blog_post_controller.CreateBlog)      // Create a new blog
+	blogGroup.PUT("/:id", middleware.VerifiedUserOnly(), blog_post_controller.UpdateBlog)    // Update an existing blog
+	blogGroup.DELETE("/:id", middleware.VerifiedUserOnly(), blog_post_controller.DeleteBlog) // Delete a blog by ID
 }

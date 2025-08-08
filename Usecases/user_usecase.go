@@ -37,12 +37,12 @@ func (uc *UserUsecase) Register(request *domain.User) error {
 	}
 	hashed, _ := security.HashPassword(request.Password)
 	request.Password = hashed
+	request.IsVerified = false
 	request.CreatedAt = time.Now()
 	request.UpdatedAt = time.Now()
 	return uc.userRepo.CreateUser(ctx, request)
 }
 
-// Login
 // Logout
 func (uc *UserUsecase) Logout(userID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), uc.ctxtimeout)
