@@ -58,23 +58,53 @@ func (b *blogPostRepo) Create(ctx context.Context, blog *domain.BlogPost) (*doma
 // Delete implements domain.BlogRepository.
 func (b *blogPostRepo) Delete(ctx context.Context, id string) *domain.DomainError {
 	oid, err := primitive.ObjectIDFromHex(id)
-
 	if err != nil {
 		return &domain.DomainError{
 			Err:  err,
 			Code: http.StatusBadRequest,
 		}
 	}
-	_, err = b.db.Collection(b.collections.BlogPosts).DeleteOne(ctx, bson.M{"_id": oid})
-	if err == mongo.ErrNoDocuments() {
+
+	userID, ok := ctx.Value("user_id").(string)
+	if !ok || userID == "" {
 		return &domain.DomainError{
-			Err:  fmt.Errorf("blog post with ID %s not found", id),
-			Code: http.StatusNotFound,
+			Err:  errors.New("unauthorized: missing user ID"),
+			Code: http.StatusUnauthorized,
 		}
-	} else if err != nil {
+	}
+
+	role, _ := ctx.Value("role").(string)
+	isAdmin := role == "admin" || role == "superadmin"
+
+	var filter bson.M
+
+	if isAdmin {
+		// Admins can delete any blog post
+		filter = bson.M{"_id": oid}
+	} else {
+		// Regular users can only delete their own blog post
+		authorOID, err := primitive.ObjectIDFromHex(userID)
+		if err != nil {
+			return &domain.DomainError{
+				Err:  errors.New("invalid user ID"),
+				Code: http.StatusBadRequest,
+			}
+		}
+		filter = bson.M{"_id": oid, "author_id": authorOID}
+	}
+
+	result, err := b.db.Collection(b.collections.BlogPosts).DeleteOne(ctx, filter)
+	if err != nil {
 		return &domain.DomainError{
 			Err:  err,
 			Code: http.StatusInternalServerError,
+		}
+	}
+
+	if result == 0 {
+		return &domain.DomainError{
+			Err:  fmt.Errorf("not found or not authorized to delete blog post with ID %s", id),
+			Code: http.StatusNotFound,
 		}
 	}
 
@@ -154,35 +184,60 @@ func (b *blogPostRepo) GetBlogByID(ctx context.Context, id string) (*domain.Blog
 
 // Update implements domain.BlogRepository.
 func (b *blogPostRepo) Update(ctx context.Context, id string, blog domain.BlogPost) (*domain.BlogPost, *domain.DomainError) {
-	oid, err := primitive.ObjectIDFromHex(blog.ID)
-
+	// Convert blog ID from hex
+	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, &domain.DomainError{
-			Err:  err,
+			Err:  fmt.Errorf("invalid blog ID: %w", err),
 			Code: http.StatusBadRequest,
 		}
 	}
-	blog.UpdatedAt = time.Now()
 
+	// Extract user_id from context and assert it's an ObjectID
+	userID, ok := ctx.Value("user_id").(primitive.ObjectID)
+	if !ok {
+		return nil, &domain.DomainError{
+			Err:  fmt.Errorf("invalid or missing user_id in context"),
+			Code: http.StatusUnauthorized,
+		}
+	}
+
+	// Filter must ensure both blog ID and author ID match
+	filter := bson.M{
+		"_id":       oid,
+		"author_id": userID,
+	}
+
+	// Set update fields
+	blog.UpdatedAt = time.Now()
 	update := bson.M{
 		"$set": bson.M{
 			"title":      blog.Title,
 			"content":    blog.Content,
 			"tags":       blog.Tags,
-			"updated_at": blog.UpdatedAt,
+			"updated_at": primitive.NewDateTimeFromTime(blog.UpdatedAt),
 		},
 	}
 
-	_, err = b.db.Collection(b.collections.BlogPosts).UpdateOne(ctx, oid, update)
+	// Perform update
+	res, err := b.db.Collection(b.collections.BlogPosts).UpdateOne(ctx, filter, update)
 	if err != nil {
 		return nil, &domain.DomainError{
-			Err:  err,
+			Err:  fmt.Errorf("failed to update blog post: %w", err),
 			Code: http.StatusInternalServerError,
 		}
 	}
 
-	// Return the updated blog
+	if res.MatchedCount == 0 {
+		return nil, &domain.DomainError{
+			Err:  fmt.Errorf("blog not found or unauthorized to update"),
+			Code: http.StatusForbidden,
+		}
+	}
+
+	// Return updated blog
 	blog.ID = oid.Hex()
+	blog.AuthorID = userID.Hex()
 	return &blog, nil
 }
 
