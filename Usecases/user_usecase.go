@@ -29,9 +29,11 @@ func (uc *UserUsecase) Register(request *domain.User) error {
 	defer cancel()
 
 	request.Role = domain.RoleUser // Default role is User
-	if _, err := uc.userRepo.FindByUsernameOrEmail(ctx, request.Username); err == nil {
+	user, err := uc.userRepo.FindByUsernameOrEmail(ctx, request.Username)
+	if err == nil && (user != domain.User{}) {
 		return errors.New("username already exists")
 	}
+
 	if _, err := uc.userRepo.FindByUsernameOrEmail(ctx, request.Email); err == nil {
 		return errors.New("email already exists")
 	}
@@ -195,7 +197,7 @@ func (uc *UserUsecase) ChangePassword(userID, oldPassword, newPassword string) e
 	}
 
 	// Check old password
-	if security.ValidatePassword(oldPassword, user.Password) != nil {
+	if err := security.ValidatePassword(user.Password, oldPassword); err != nil {
 		return errors.New("invalid old password")
 	}
 
