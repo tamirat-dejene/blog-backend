@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"google.golang.org/api/oauth2/v2"
-
 	"github.com/gin-gonic/gin"
+	oauth2v2 "google.golang.org/api/oauth2/v2"
+	"google.golang.org/api/option"
 )
 
 type AuthController struct {
@@ -369,7 +369,7 @@ func (ac *AuthController) VerifyEmailRequest(c *gin.Context) {
 
 	user, err := ac.UserUsecase.GetUserByEmail(req.Email)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": domain.ErrNotFound})
+		c.JSON(http.StatusNotFound, gin.H{"error": domain.ErrNotFound.Error()})
 		return
 	}
 
@@ -398,7 +398,7 @@ func (ac *AuthController) VerifyOTPRequest(c *gin.Context) {
 
 	user, err := ac.UserUsecase.FindUserByID(userID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": domain.ErrNotFound})
+		c.JSON(http.StatusNotFound, gin.H{"error": domain.ErrNotFound.Error()})
 		return
 	}
 
@@ -417,7 +417,7 @@ func (ac *AuthController) VerifyOTPRequest(c *gin.Context) {
 
 	// delete the OTP after successful verification
 	if err := ac.OTP.DeleteByID(otp.ID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": domain.ErrOTPFailedToDelete})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": domain.ErrOTPFailedToDelete.Error()})
 		return
 	}
 
@@ -429,7 +429,7 @@ func (ac *AuthController) ResendOTPRequest(c *gin.Context) {
 	userID := c.GetString("user_id")
 	user, err := ac.UserUsecase.FindUserByID(userID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": domain.ErrNotFound})
+		c.JSON(http.StatusNotFound, gin.H{"error": domain.ErrNotFound.Error()})
 		return
 	}
 
@@ -465,7 +465,7 @@ func (ac *AuthController) GoogleCallback(c *gin.Context) {
 	}
 
 	client := conf.Client(context.Background(), token)
-	service, err := oauth2.New(client)
+	service, err := oauth2v2.NewService(c.Request.Context(), option.WithHTTPClient(client))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create oauth service"})
 		return

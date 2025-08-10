@@ -12,7 +12,7 @@ type UserRequest struct {
 	Password   string    `json:"password" validate:"required,min=6,max=100"`
 	FirstName  string    `json:"first_name" validate:"required,alpha,min=2,max=50"`
 	LastName   string    `json:"last_name" validate:"required,alpha,min=2,max=50"`
-	Role       string    `json:"role" validate:"required,oneof=admin user superadmin"`
+	Role       string    `json:"role"`
 	Bio        string    `json:"bio" validate:"max=500"`
 	IsVerified bool      `json:"is_verified" validate:"omitempty"`
 	AvatarURL  string    `json:"avatar_url" validate:"omitempty,url"`
@@ -84,4 +84,10 @@ type UserUpdateProfileRequest struct {
 	Bio       string `form:"bio" validate:"omitempty,max=500"`
 	FirstName string `form:"first_name" validate:"omitempty,alpha,min=2,max=50"`
 	LastName  string `form:"last_name" validate:"omitempty,alpha,min=2,max=50"`
+}
+
+// change password request
+type ChangePasswordRequest struct {
+	OldPassword string `json:"old_password" validate:"required,min=6,max=100"`
+	NewPassword string `json:"new_password" validate:"required,min=6,max=100"`
 }

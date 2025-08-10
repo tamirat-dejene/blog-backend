@@ -183,3 +183,29 @@ func (uc *UserUsecase) UpdateProfile(userID string, update domain.UserProfileUpd
 
 	return user, nil
 }
+
+func (uc *UserUsecase) ChangePassword(userID, oldPassword, newPassword string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), uc.ctxtimeout)
+	defer cancel()
+
+	// Find user
+	user, err := uc.userRepo.FindUserByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	// Check old password
+	if security.ValidatePassword(oldPassword, user.Password) != nil {
+		return errors.New("invalid old password")
+	}
+
+	// Hash new password
+	hashedPassword, err := security.HashPassword(newPassword)
+	if err != nil {
+		return err
+	}
+
+	// Update password
+	user.Password = hashedPassword
+	return uc.userRepo.UpdateUser(ctx, user.ID, user)
+}
