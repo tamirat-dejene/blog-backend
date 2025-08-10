@@ -25,7 +25,7 @@ func NewUserController(uc domain.IUserUsecase) *UserController {
 func (ctrl *UserController) UpdateProfile(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": domain.ErrUnauthorized})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": domain.ErrUnauthorized.Error()})
 		return
 	}
 
