@@ -84,11 +84,10 @@ func ErrNoDocuments() error {
 func NewClient(uri string) (Client, error) {
 	// 🙏 u can  use your context config instead but the previous one doest works for me due to internet issue.
 	time.Local = time.UTC
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second) // Increased timeout to 60 seconds
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	clientOptions := options.Client().ApplyURI(uri)
-	client, err := mongo.Connect(ctx, clientOptions)
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to MongoDB: %w", err)
 	}
