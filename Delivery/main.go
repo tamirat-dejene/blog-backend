@@ -48,9 +48,13 @@ func main() {
 	routers.Setup(env, timeout, db, router)
 
 	srv := &http.Server{
-		Addr:    env.Port,
-		Handler: router.Handler(),
+		Addr:         env.Port,
+		Handler:      router.Handler(),
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 30 * time.Second,
 	}
+
 	// Start HTTP Server
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {

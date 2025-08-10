@@ -43,7 +43,7 @@ type IUserUsecase interface {
 	GetUserByEmail(email string) (*User, error)
 	UpdateUser(id string, user *User) (*User, error)
 	UpdateProfile(userID string, update UserProfileUpdate, fileName string) (*User, error)
-	// GetAllUsers() ([]*User, error)
+	ChangePassword(userID, oldPassword, newPassword string) error
 
 	// anti
 	Register(request *User) error
