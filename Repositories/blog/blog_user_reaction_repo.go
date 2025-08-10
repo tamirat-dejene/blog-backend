@@ -44,9 +44,23 @@ func (u *BlogUserReactionRepo) Create(ctx context.Context, reaction *domain.Blog
 	blogFilter := bson.M{"_id": blogReaction.BlogID}
 	blogCollection := u.db.Collection(u.collections.BlogPosts)
 
+	var blog mapper.BlogPostModel
+	err := blogCollection.FindOne(ctx, blogFilter).Decode(&blog)
+	if err == mongo.ErrNoDocuments() {
+		return nil, &domain.DomainError{
+			Err:  fmt.Errorf("blog with ID %s does not exist", blogReaction.BlogID.Hex()),
+			Code: http.StatusBadRequest,
+		}
+	} else if err != nil {
+		return nil, &domain.DomainError{
+			Err:  fmt.Errorf("failed to verify blog existence: %w", err),
+			Code: http.StatusInternalServerError,
+		}
+	}
+
 	// Check if a reaction already exists
 	var existing mapper.BlogUserReactionModel
-	err := u.db.Collection(u.collections.BlogUserReactions).FindOne(ctx, reactionFilter).Decode(&existing)
+	err = u.db.Collection(u.collections.BlogUserReactions).FindOne(ctx, reactionFilter).Decode(&existing)
 
 	if err == mongo.ErrNoDocuments() {
 		// No existing reaction — insert new
