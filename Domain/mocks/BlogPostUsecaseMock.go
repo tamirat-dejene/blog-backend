@@ -168,8 +168,8 @@ func (_c *MockBlogPostUsecase_DeleteBlog_Call) RunAndReturn(run func(ctx context
 }
 
 // GetBlogByID provides a mock function for the type MockBlogPostUsecase
-func (_mock *MockBlogPostUsecase) GetBlogByID(ctx context.Context, id string) (*domain.BlogPost, *domain.DomainError) {
-	ret := _mock.Called(ctx, id)
+func (_mock *MockBlogPostUsecase) GetBlogByID(ctx context.Context, user_id string, blog_id string) (*domain.BlogPost, *domain.DomainError) {
+	ret := _mock.Called(ctx, user_id, blog_id)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetBlogByID")
@@ -177,18 +177,18 @@ func (_mock *MockBlogPostUsecase) GetBlogByID(ctx context.Context, id string) (*
 
 	var r0 *domain.BlogPost
 	var r1 *domain.DomainError
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (*domain.BlogPost, *domain.DomainError)); ok {
-		return returnFunc(ctx, id)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) (*domain.BlogPost, *domain.DomainError)); ok {
+		return returnFunc(ctx, user_id, blog_id)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) *domain.BlogPost); ok {
-		r0 = returnFunc(ctx, id)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) *domain.BlogPost); ok {
+		r0 = returnFunc(ctx, user_id, blog_id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*domain.BlogPost)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string) *domain.DomainError); ok {
-		r1 = returnFunc(ctx, id)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string) *domain.DomainError); ok {
+		r1 = returnFunc(ctx, user_id, blog_id)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*domain.DomainError)
@@ -204,12 +204,13 @@ type MockBlogPostUsecase_GetBlogByID_Call struct {
 
 // GetBlogByID is a helper method to define mock.On call
 //   - ctx context.Context
-//   - id string
-func (_e *MockBlogPostUsecase_Expecter) GetBlogByID(ctx interface{}, id interface{}) *MockBlogPostUsecase_GetBlogByID_Call {
-	return &MockBlogPostUsecase_GetBlogByID_Call{Call: _e.mock.On("GetBlogByID", ctx, id)}
+//   - user_id string
+//   - blog_id string
+func (_e *MockBlogPostUsecase_Expecter) GetBlogByID(ctx interface{}, user_id interface{}, blog_id interface{}) *MockBlogPostUsecase_GetBlogByID_Call {
+	return &MockBlogPostUsecase_GetBlogByID_Call{Call: _e.mock.On("GetBlogByID", ctx, user_id, blog_id)}
 }
 
-func (_c *MockBlogPostUsecase_GetBlogByID_Call) Run(run func(ctx context.Context, id string)) *MockBlogPostUsecase_GetBlogByID_Call {
+func (_c *MockBlogPostUsecase_GetBlogByID_Call) Run(run func(ctx context.Context, user_id string, blog_id string)) *MockBlogPostUsecase_GetBlogByID_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -219,9 +220,14 @@ func (_c *MockBlogPostUsecase_GetBlogByID_Call) Run(run func(ctx context.Context
 		if args[1] != nil {
 			arg1 = args[1].(string)
 		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
 		run(
 			arg0,
 			arg1,
+			arg2,
 		)
 	})
 	return _c
@@ -232,7 +238,7 @@ func (_c *MockBlogPostUsecase_GetBlogByID_Call) Return(blogPost *domain.BlogPost
 	return _c
 }
 
-func (_c *MockBlogPostUsecase_GetBlogByID_Call) RunAndReturn(run func(ctx context.Context, id string) (*domain.BlogPost, *domain.DomainError)) *MockBlogPostUsecase_GetBlogByID_Call {
+func (_c *MockBlogPostUsecase_GetBlogByID_Call) RunAndReturn(run func(ctx context.Context, user_id string, blog_id string) (*domain.BlogPost, *domain.DomainError)) *MockBlogPostUsecase_GetBlogByID_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -303,6 +309,71 @@ func (_c *MockBlogPostUsecase_GetBlogs_Call) Return(blogPostsPages []domain.Blog
 }
 
 func (_c *MockBlogPostUsecase_GetBlogs_Call) RunAndReturn(run func(ctx context.Context, filter *domain.BlogPostFilter) ([]domain.BlogPostsPage, *domain.DomainError)) *MockBlogPostUsecase_GetBlogs_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// IncrementViewCountWithLimit provides a mock function for the type MockBlogPostUsecase
+func (_mock *MockBlogPostUsecase) IncrementViewCountWithLimit(ctx context.Context, user_id string, blog_id string) *domain.DomainError {
+	ret := _mock.Called(ctx, user_id, blog_id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for IncrementViewCountWithLimit")
+	}
+
+	var r0 *domain.DomainError
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) *domain.DomainError); ok {
+		r0 = returnFunc(ctx, user_id, blog_id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.DomainError)
+		}
+	}
+	return r0
+}
+
+// MockBlogPostUsecase_IncrementViewCountWithLimit_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IncrementViewCountWithLimit'
+type MockBlogPostUsecase_IncrementViewCountWithLimit_Call struct {
+	*mock.Call
+}
+
+// IncrementViewCountWithLimit is a helper method to define mock.On call
+//   - ctx context.Context
+//   - user_id string
+//   - blog_id string
+func (_e *MockBlogPostUsecase_Expecter) IncrementViewCountWithLimit(ctx interface{}, user_id interface{}, blog_id interface{}) *MockBlogPostUsecase_IncrementViewCountWithLimit_Call {
+	return &MockBlogPostUsecase_IncrementViewCountWithLimit_Call{Call: _e.mock.On("IncrementViewCountWithLimit", ctx, user_id, blog_id)}
+}
+
+func (_c *MockBlogPostUsecase_IncrementViewCountWithLimit_Call) Run(run func(ctx context.Context, user_id string, blog_id string)) *MockBlogPostUsecase_IncrementViewCountWithLimit_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockBlogPostUsecase_IncrementViewCountWithLimit_Call) Return(domainError *domain.DomainError) *MockBlogPostUsecase_IncrementViewCountWithLimit_Call {
+	_c.Call.Return(domainError)
+	return _c
+}
+
+func (_c *MockBlogPostUsecase_IncrementViewCountWithLimit_Call) RunAndReturn(run func(ctx context.Context, user_id string, blog_id string) *domain.DomainError) *MockBlogPostUsecase_IncrementViewCountWithLimit_Call {
 	_c.Call.Return(run)
 	return _c
 }

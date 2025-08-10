@@ -18,7 +18,7 @@ type BlogCommentController struct {
 
 func (b *BlogCommentController) CreateComment(ctx *gin.Context) {
 	var req dto.BlogCommentRequest
-	err := ctx.ShouldBind(&req)
+	err := ctx.ShouldBindJSON(&req)
 
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
@@ -58,7 +58,7 @@ func (b *BlogCommentController) CreateComment(ctx *gin.Context) {
 func (b *BlogCommentController) DeleteComment(ctx *gin.Context) {
 	// Extract the comment ID from the URL parameters
 	if err := ctx.ShouldBindUri(&struct {
-		ID string `uri:"id"`
+		ID string `uri:"id" binding:"required"`
 	}{}); err != nil {
 		ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
 			Message: "Invalid comment ID format",
