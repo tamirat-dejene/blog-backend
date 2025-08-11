@@ -22,56 +22,10 @@ func NewUserController(uc domain.IUserUsecase) *UserController {
 	return &UserController{uc: uc}
 }
 
-func (ctrl *UserController) Register(ctx *gin.Context) {
-	var req dto.UserRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
-		return
-	}
-	if err := validate.Struct(req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-		return
-	}
-	user := dto.ToDomainUser(req)
-	if err := ctrl.uc.Register(&user); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	ctx.JSON(http.StatusCreated, dto.ToUserResponse(user))
-}
-
-func (ctrl *UserController) Logout(ctx *gin.Context) {
-	userID := ctx.Param("userID")
-	if err := ctrl.uc.Logout(userID); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	ctx.JSON(http.StatusOK, gin.H{"message": "User logged out successfully"})
-}
-
-func (ctrl *UserController) ChangeRole(ctx *gin.Context) {
-	var req dto.ChangeRoleRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
-		return
-	}
-	initiator := ctx.GetString("role")
-	target := ctx.Param("userID")
-	user := domain.User{
-		Role: domain.UserRole(req.Role),
-	}
-	if err := ctrl.uc.ChangeRole(initiator, target, user); err != nil {
-		ctx.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
-		return
-	}
-	ctx.JSON(http.StatusOK, gin.H{"message": "User role changed successfully"})
-}
-
 func (ctrl *UserController) UpdateProfile(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": domain.ErrUnauthorized})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": domain.ErrUnauthorized.Error()})
 		return
 	}
 
@@ -136,4 +90,27 @@ func (ctrl *UserController) UpdateProfile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.ToUserResponse(*updatedUser))
+}
+
+func (ctrl *UserController) ChangePassword(c *gin.Context) {
+	var req dto.ChangePasswordRequest
+	if err := c.ShouldBindBodyWithJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+	if err := validate.Struct(req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+	userID := c.GetString("user_id")
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	if err := ctrl.uc.ChangePassword(userID, req.OldPassword, req.NewPassword); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Password changed successfully"})
 }
