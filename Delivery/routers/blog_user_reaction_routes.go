@@ -4,6 +4,7 @@ import (
 	"g6/blog-api/Delivery/bootstrap"
 	"g6/blog-api/Delivery/controllers"
 	"g6/blog-api/Infrastructure/database/mongo"
+	"g6/blog-api/Infrastructure/middleware"
 	repository "g6/blog-api/Repositories/blog"
 	usecases "g6/blog-api/Usecases"
 	"time"
@@ -12,11 +13,12 @@ import (
 )
 
 func NewBlogUserReactionRoutes(env *bootstrap.Env, api *gin.RouterGroup, db mongo.Database) {
-	blogUserReactionGroup := api.Group("/blog/reactions")
+	blogUserReactionGroup := api.Group("/blog/reactions", middleware.AuthMiddleware(*env))
 
 	// Initialize the blog user reaction repository, usecase, and controller
 	blog_user_reaction_controller := controllers.BlogReactionController{
-		BlogUserReactionUsecase: usecases.NewBlogUserReactionUsecase(repository.NewUserReactionRepo(db, &mongo.Collections{
+		BlogUserReactionUsecase: usecases.NewBlogUserReactionUsecase(
+			repository.NewUserReactionRepo(db, &mongo.Collections{
 			BlogPosts:         env.BlogPostCollection,
 			BlogComments:      env.BlogCommentCollection,
 			BlogUserReactions: env.BlogUserReactionCollection,
