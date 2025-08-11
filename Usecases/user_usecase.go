@@ -34,7 +34,8 @@ func (uc *UserUsecase) Register(request *domain.User) error {
 		return errors.New("username already exists")
 	}
 
-	if _, err := uc.userRepo.FindByUsernameOrEmail(ctx, request.Email); err == nil {
+	user, err = uc.userRepo.FindByUsernameOrEmail(ctx, request.Email)
+	if err == nil && (user != domain.User{}) {
 		return errors.New("email already exists")
 	}
 	hashed, _ := security.HashPassword(request.Password)

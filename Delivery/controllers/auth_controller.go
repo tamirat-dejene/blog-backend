@@ -139,10 +139,14 @@ func (ac *AuthController) LoginRequest(c *gin.Context) {
 		SameSite: http.SameSiteStrictMode,
 	})
 
-	c.JSON(http.StatusOK, dto.LoginResponse{
-		AccessToken:  response.AccessToken,
-		RefreshToken: response.RefreshToken,
-	})
+	c.JSON(http.StatusOK,
+		gin.H{
+			"message": "Login successful",
+			"user":    dto.ToUserResponse(*user),
+			"tokens": dto.LoginResponse{
+				AccessToken:  response.AccessToken,
+				RefreshToken: response.RefreshToken,
+			}})
 }
 
 func (ac *AuthController) RefreshToken(c *gin.Context) {
@@ -287,6 +291,8 @@ func (ac *AuthController) LogoutRequest(c *gin.Context) {
 
 func (ac *AuthController) ChangeRoleRequest(c *gin.Context) {
 	var req dto.ChangeRoleRequest
+	userId := c.GetString("user_id")
+	req.UserID = userId
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return

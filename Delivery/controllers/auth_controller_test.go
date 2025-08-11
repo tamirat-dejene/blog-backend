@@ -168,10 +168,15 @@ func (s *AuthControllerSuite) TestLoginRequest() {
 		s.handler.LoginRequest(c)
 
 		s.Equal(http.StatusOK, w.Code)
-		var response dto.LoginResponse
+		var response gin.H
 		json.Unmarshal(w.Body.Bytes(), &response)
-		s.Equal(tokenResponse.AccessToken, response.AccessToken)
-		s.Equal(tokenResponse.RefreshToken, response.RefreshToken)
+		fmt.Println(response)
+		s.Equal("Login successful", response["message"])
+		userResponse := response["user"].(map[string]any)
+		s.Equal(user.Email, userResponse["email"])
+		tokens := response["tokens"].(map[string]any)
+		s.Equal(tokenResponse.AccessToken, tokens["access_token"])
+		s.Equal(tokenResponse.RefreshToken, tokens["refresh_token"])
 		s.resetMocks()
 	})
 
