@@ -68,3 +68,4 @@ type IUserRepository interface {
 	InvalidateTokens(context.Context, string) error
 	ChangeRole(context.Context, string, string, string) error
 }
+

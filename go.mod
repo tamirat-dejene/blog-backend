@@ -5,6 +5,8 @@ go 1.24.5
 require (
 	github.com/go-playground/validator/v10 v10.20.0
 	github.com/stretchr/testify v1.10.0
+	golang.org/x/oauth2 v0.30.0
+	google.golang.org/api v0.245.0
 )
 
 require (
@@ -60,9 +62,7 @@ require (
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/arch v0.8.0 // indirect
 	golang.org/x/net v0.42.0 // indirect
-	golang.org/x/oauth2 v0.30.0 // indirect
 	golang.org/x/sys v0.34.0 // indirect
-	google.golang.org/api v0.245.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250728155136-f173205681a0 // indirect
 	google.golang.org/grpc v1.74.2 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
