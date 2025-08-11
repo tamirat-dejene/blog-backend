@@ -227,22 +227,22 @@ func (u *BlogUserReactionRepo) GetUserReaction(ctx context.Context, blogID strin
 			Code: http.StatusBadRequest,
 		}
 	}
-	userIDObj, err := primitive.ObjectIDFromHex(userID)
-	if err != nil {
-		return nil, &domain.DomainError{
-			Err:  fmt.Errorf("invalid user ID: %w", err),
-			Code: http.StatusBadRequest,
-		}
-	}
+	// userIDObj, err := primitive.ObjectIDFromHex(userID)
+	// if err != nil {
+	// 	return nil, &domain.DomainError{
+	// 		Err:  fmt.Errorf("invalid user ID: %w", err),
+	// 		Code: http.StatusBadRequest,
+	// 	}
+	// }
 	// Prepare the filter and query the database
-	filter := bson.M{"blog_id": blogIDObj, "user_id": userIDObj}
+	filter := bson.M{"blog_id": blogIDObj}
 	var reaction mapper.BlogUserReactionModel
 	err = u.db.Collection(u.collections.BlogUserReactions).FindOne(ctx, filter).Decode(&reaction)
 
 	// Handle errors
 	if err == mongo.ErrNoDocuments() {
 		return nil, &domain.DomainError{
-			Err:  fmt.Errorf("no reaction found for blog %s by user %s", blogID, userID),
+			Err:  fmt.Errorf("no reaction found for blog %s", blogID),
 			Code: http.StatusNotFound,
 		}
 	} else if err != nil {
