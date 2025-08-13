@@ -38,6 +38,69 @@ func (_m *MockIUserUsecase) EXPECT() *MockIUserUsecase_Expecter {
 	return &MockIUserUsecase_Expecter{mock: &_m.Mock}
 }
 
+// ChangePassword provides a mock function for the type MockIUserUsecase
+func (_mock *MockIUserUsecase) ChangePassword(userID string, oldPassword string, newPassword string) error {
+	ret := _mock.Called(userID, oldPassword, newPassword)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ChangePassword")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(string, string, string) error); ok {
+		r0 = returnFunc(userID, oldPassword, newPassword)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockIUserUsecase_ChangePassword_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ChangePassword'
+type MockIUserUsecase_ChangePassword_Call struct {
+	*mock.Call
+}
+
+// ChangePassword is a helper method to define mock.On call
+//   - userID string
+//   - oldPassword string
+//   - newPassword string
+func (_e *MockIUserUsecase_Expecter) ChangePassword(userID interface{}, oldPassword interface{}, newPassword interface{}) *MockIUserUsecase_ChangePassword_Call {
+	return &MockIUserUsecase_ChangePassword_Call{Call: _e.mock.On("ChangePassword", userID, oldPassword, newPassword)}
+}
+
+func (_c *MockIUserUsecase_ChangePassword_Call) Run(run func(userID string, oldPassword string, newPassword string)) *MockIUserUsecase_ChangePassword_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 string
+		if args[0] != nil {
+			arg0 = args[0].(string)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockIUserUsecase_ChangePassword_Call) Return(err error) *MockIUserUsecase_ChangePassword_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockIUserUsecase_ChangePassword_Call) RunAndReturn(run func(userID string, oldPassword string, newPassword string) error) *MockIUserUsecase_ChangePassword_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ChangeRole provides a mock function for the type MockIUserUsecase
 func (_mock *MockIUserUsecase) ChangeRole(initiatorRole string, targetUserID string, request domain.User) error {
 	ret := _mock.Called(initiatorRole, targetUserID, request)

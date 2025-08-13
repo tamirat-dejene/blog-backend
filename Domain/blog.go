@@ -17,8 +17,8 @@ type BlogPost struct {
 	Likes           int
 	Dislikes        int
 	ViewCount       int
-	CommentCount    int // for easy access to comment count
-	PopularityScore int // computed popularity score : score =  Normalized((likes * 3) + (views * 2) + (comments * 1.5) - (dislikes * 2.5))
+	CommentCount    int     // for easy access to comment count
+	PopularityScore float64 // computed popularity score : score =  Normalized((likes * 3) + (views * 2) + (comments * 1.5) - (dislikes * 2.5))
 }
 
 type BlogPostsPage struct {
@@ -64,10 +64,14 @@ type BlogPostFilter struct {
 // Repository Interfaces provide an abstraction layer for data access operations related to blogs, comments, and user reactions.
 type BlogPostRepository interface {
 	Create(ctx context.Context, blog *BlogPost) (*BlogPost, *DomainError)
-	Update(ctx context.Context, id string, blog BlogPost) (BlogPost, *DomainError)
+	Update(ctx context.Context, id string, blog BlogPost) (*BlogPost, *DomainError)
 	Delete(ctx context.Context, id string) *DomainError
-	Get(ctx context.Context, filter *BlogPostFilter) ([]BlogPostsPage, *DomainError)
+	Get(ctx context.Context, filter *BlogPostFilter) ([]BlogPostsPage, *string, *DomainError) // pages, serialized string for caching, error
 	GetBlogByID(ctx context.Context, id string) (*BlogPost, *DomainError)
+	RefreshPopularityScore(ctx context.Context, id string) (*BlogPost, *DomainError)
+	IncrementViewCount(ctx context.Context, id string) (*BlogPost, *DomainError)
+	UpdateCommentCount(ctx context.Context, id string, increment bool) (*BlogPost, *DomainError)
+	UpdateReactionCount(ctx context.Context, is_like bool, id string, increment bool) (*BlogPost, *DomainError)
 
 	//... more methods can be added based on the usecases
 }
@@ -89,10 +93,11 @@ type BlogUserReactionRepository interface {
 // Usecase Interfaces define the business logic for handling blogs, comments, and user reactions.
 type BlogPostUsecase interface {
 	GetBlogs(ctx context.Context, filter *BlogPostFilter) ([]BlogPostsPage, *DomainError)
-	GetBlogByID(ctx context.Context, id string) (*BlogPost, *DomainError)
+	GetBlogByID(ctx context.Context, user_id, blog_id string) (*BlogPost, *DomainError)
 	CreateBlog(ctx context.Context, blog *BlogPost) (*BlogPost, *DomainError)
-	UpdateBlog(ctx context.Context, id string, blog BlogPost) (BlogPost, *DomainError)
+	UpdateBlog(ctx context.Context, id string, blog BlogPost) (*BlogPost, *DomainError)
 	DeleteBlog(ctx context.Context, id string) *DomainError
+	IncrementViewCountWithLimit(ctx context.Context, user_id, blog_id string) (*DomainError)
 }
 
 type BlogCommentUsecase interface {

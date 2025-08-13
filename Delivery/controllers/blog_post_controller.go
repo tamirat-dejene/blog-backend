@@ -94,7 +94,7 @@ func (b *BlogPostController) GetBlogPostByID(ctx *gin.Context) {
 	}
 
 	// Attempt to retrieve the blog post by ID
-	blog, err := b.BlogPostUsecase.GetBlogByID(ctx, blog_id)
+	blog, err := b.BlogPostUsecase.GetBlogByID(ctx, ctx.GetString("user_id"), blog_id)
 	if err != nil {
 		ctx.JSON(err.Code, domain.ErrorResponse{
 			Message: "Failed to retrieve blog",
@@ -183,7 +183,7 @@ func (b *BlogPostController) UpdateBlog(ctx *gin.Context) {
 	}
 
 	var response dto.BlogPostResponse
-	response.Parse(&updatedBlog)
+	response.Parse(updatedBlog)
 
 	// Success response
 	ctx.JSON(http.StatusOK, domain.SuccessResponse{

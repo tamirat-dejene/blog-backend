@@ -29,20 +29,23 @@ func (uc *UserUsecase) Register(request *domain.User) error {
 	defer cancel()
 
 	request.Role = domain.RoleUser // Default role is User
-	if _, err := uc.userRepo.FindByUsernameOrEmail(ctx, request.Username); err == nil {
+	user, err := uc.userRepo.FindByUsernameOrEmail(ctx, request.Username)
+	if err == nil && (user != domain.User{}) {
 		return errors.New("username already exists")
 	}
-	if _, err := uc.userRepo.FindByUsernameOrEmail(ctx, request.Email); err == nil {
+
+	user, err = uc.userRepo.FindByUsernameOrEmail(ctx, request.Email)
+	if err == nil && (user != domain.User{}) {
 		return errors.New("email already exists")
 	}
 	hashed, _ := security.HashPassword(request.Password)
 	request.Password = hashed
+	request.IsVerified = false
 	request.CreatedAt = time.Now()
 	request.UpdatedAt = time.Now()
 	return uc.userRepo.CreateUser(ctx, request)
 }
 
-// Login
 // Logout
 func (uc *UserUsecase) Logout(userID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), uc.ctxtimeout)
@@ -182,4 +185,30 @@ func (uc *UserUsecase) UpdateProfile(userID string, update domain.UserProfileUpd
 	}
 
 	return user, nil
+}
+
+func (uc *UserUsecase) ChangePassword(userID, oldPassword, newPassword string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), uc.ctxtimeout)
+	defer cancel()
+
+	// Find user
+	user, err := uc.userRepo.FindUserByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	// Check old password
+	if err := security.ValidatePassword(user.Password, oldPassword); err != nil {
+		return errors.New("invalid old password")
+	}
+
+	// Hash new password
+	hashedPassword, err := security.HashPassword(newPassword)
+	if err != nil {
+		return err
+	}
+
+	// Update password
+	user.Password = hashedPassword
+	return uc.userRepo.UpdateUser(ctx, user.ID, user)
 }

@@ -44,14 +44,28 @@ func (u *BlogUserReactionRepo) Create(ctx context.Context, reaction *domain.Blog
 	blogFilter := bson.M{"_id": blogReaction.BlogID}
 	blogCollection := u.db.Collection(u.collections.BlogPosts)
 
+	var blog mapper.BlogPostModel
+	err := blogCollection.FindOne(ctx, blogFilter).Decode(&blog)
+	if err == mongo.ErrNoDocuments() {
+		return nil, &domain.DomainError{
+			Err:  fmt.Errorf("blog with ID %s does not exist", blogReaction.BlogID.Hex()),
+			Code: http.StatusBadRequest,
+		}
+	} else if err != nil {
+		return nil, &domain.DomainError{
+			Err:  fmt.Errorf("failed to verify blog existence: %w", err),
+			Code: http.StatusInternalServerError,
+		}
+	}
+
 	// Check if a reaction already exists
 	var existing mapper.BlogUserReactionModel
-	err := u.db.Collection(u.collections.BlogUserReactions).FindOne(ctx, reactionFilter).Decode(&existing)
+	err = u.db.Collection(u.collections.BlogUserReactions).FindOne(ctx, reactionFilter).Decode(&existing)
 
 	if err == mongo.ErrNoDocuments() {
 		// No existing reaction — insert new
 		reaction.CreatedAt = time.Now()
-		blogReaction.CreatedAt = reaction.CreatedAt
+		blogReaction.CreatedAt = primitive.NewDateTimeFromTime(reaction.CreatedAt)
 
 		inserted, err := u.db.Collection(u.collections.BlogUserReactions).InsertOne(ctx, blogReaction)
 		if err != nil {
@@ -144,7 +158,8 @@ func (u *BlogUserReactionRepo) Create(ctx context.Context, reaction *domain.Blog
 		}
 	}
 
-	// Update the return object with new timestamp
+	// Update the return object with new timestamp and existing id
+	reaction.ID = existing.ID.Hex()
 	reaction.CreatedAt = time.Now()
 	return reaction, nil
 }
@@ -193,7 +208,7 @@ func (u *BlogUserReactionRepo) Delete(ctx context.Context, id string) *domain.Do
 	_, err = u.db.Collection(u.collections.BlogPosts).UpdateOne(ctx, bson.M{"_id": reaction.BlogID}, bson.M{
 		"$inc": bson.M{decField: -1},
 	})
-	
+
 	if err != nil {
 		return &domain.DomainError{
 			Err:  fmt.Errorf("failed to decrement %s count: %w", decField, err),
@@ -212,22 +227,22 @@ func (u *BlogUserReactionRepo) GetUserReaction(ctx context.Context, blogID strin
 			Code: http.StatusBadRequest,
 		}
 	}
-	userIDObj, err := primitive.ObjectIDFromHex(userID)
-	if err != nil {
-		return nil, &domain.DomainError{
-			Err:  fmt.Errorf("invalid user ID: %w", err),
-			Code: http.StatusBadRequest,
-		}
-	}
+	// userIDObj, err := primitive.ObjectIDFromHex(userID)
+	// if err != nil {
+	// 	return nil, &domain.DomainError{
+	// 		Err:  fmt.Errorf("invalid user ID: %w", err),
+	// 		Code: http.StatusBadRequest,
+	// 	}
+	// }
 	// Prepare the filter and query the database
-	filter := bson.M{"blog_id": blogIDObj, "user_id": userIDObj}
+	filter := bson.M{"blog_id": blogIDObj}
 	var reaction mapper.BlogUserReactionModel
 	err = u.db.Collection(u.collections.BlogUserReactions).FindOne(ctx, filter).Decode(&reaction)
 
 	// Handle errors
 	if err == mongo.ErrNoDocuments() {
 		return nil, &domain.DomainError{
-			Err:  fmt.Errorf("no reaction found for blog %s by user %s", blogID, userID),
+			Err:  fmt.Errorf("no reaction found for blog %s", blogID),
 			Code: http.StatusNotFound,
 		}
 	} else if err != nil {

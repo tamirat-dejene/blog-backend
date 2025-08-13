@@ -26,8 +26,11 @@ func (b *BlogReactionController) CreateReaction(ctx *gin.Context) {
 		return
 	}
 
+	reaction := req.ToDomain()
+	reaction.UserID = ctx.GetString("user_id") // user_id is set in the context from middleware
+
 	// Convert the DTO to the domain model
-	createdReaction, err := b.BlogUserReactionUsecase.CreateReaction(ctx, req.ToDomain())
+	createdReaction, err := b.BlogUserReactionUsecase.CreateReaction(ctx, reaction)
 
 	if err != nil {
 		ctx.JSON(err.Code, domain.ErrorResponse{
@@ -85,7 +88,6 @@ func (b *BlogReactionController) GetUserReaction(ctx *gin.Context) {
 
 	// Call the use case to get the user reaction
 	reaction, err := b.BlogUserReactionUsecase.GetUserReaction(ctx, query.BlogId, ctx.GetString("user_id"))
-
 
 	if err != nil {
 		ctx.JSON(err.Code, domain.ErrorResponse{

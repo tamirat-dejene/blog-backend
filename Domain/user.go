@@ -6,18 +6,19 @@ import (
 )
 
 type User struct {
-	ID        string
-	Username  string
-	Email     string
-	FirstName string
-	LastName  string
-	Password  string
-	Role      UserRole
-	Bio       string
-	AvatarURL string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	Provider  string 
+	ID         string
+	Username   string
+	Email      string
+	FirstName  string
+	LastName   string
+	Password   string
+	Role       UserRole
+	Bio        string
+	AvatarURL  string
+	IsVerified bool
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+	Provider   string
 }
 
 type UserRole string
@@ -42,7 +43,7 @@ type IUserUsecase interface {
 	GetUserByEmail(email string) (*User, error)
 	UpdateUser(id string, user *User) (*User, error)
 	UpdateProfile(userID string, update UserProfileUpdate, fileName string) (*User, error)
-	// GetAllUsers() ([]*User, error)
+	ChangePassword(userID, oldPassword, newPassword string) error
 
 	// anti
 	Register(request *User) error
