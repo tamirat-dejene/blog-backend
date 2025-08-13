@@ -20,7 +20,7 @@ func (b *BlogReactionController) CreateReaction(ctx *gin.Context) {
 
 	if err := ctx.ShouldBind(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
-			Message: "Invalid request data",
+			Code:    http.StatusBadRequest,
 			Error:   err.Error(),
 		})
 		return
@@ -34,7 +34,6 @@ func (b *BlogReactionController) CreateReaction(ctx *gin.Context) {
 
 	if err != nil {
 		ctx.JSON(err.Code, domain.ErrorResponse{
-			Message: "Failed to create reaction",
 			Error:   err.Err.Error(),
 			Code:    err.Code,
 		})
@@ -51,8 +50,8 @@ func (b *BlogReactionController) DeleteReaction(ctx *gin.Context) {
 	// Extract the ID from the URL parameters
 	if ctx.Param("id") == "" {
 		ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
-			Message: "Reaction ID is required",
 			Error:   "Missing reaction ID in request",
+			Code:    http.StatusBadRequest,
 		})
 		return
 	}
@@ -61,7 +60,6 @@ func (b *BlogReactionController) DeleteReaction(ctx *gin.Context) {
 	err := b.BlogUserReactionUsecase.DeleteReaction(ctx, ctx.Param("id"))
 	if err != nil {
 		ctx.JSON(err.Code, domain.ErrorResponse{
-			Message: "Failed to delete reaction",
 			Error:   err.Err.Error(),
 			Code:    err.Code,
 		})
@@ -80,8 +78,8 @@ func (b *BlogReactionController) GetUserReaction(ctx *gin.Context) {
 	var query dto.ReactionQuery
 	if err := ctx.ShouldBindQuery(&query); err != nil {
 		ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
-			Message: "Invalid query parameters",
-			Error:   err.Error(),
+			Error: err.Error(),
+			Code:  http.StatusBadRequest,
 		})
 		return
 	}
@@ -91,7 +89,6 @@ func (b *BlogReactionController) GetUserReaction(ctx *gin.Context) {
 
 	if err != nil {
 		ctx.JSON(err.Code, domain.ErrorResponse{
-			Message: "Failed to retrieve user reaction",
 			Error:   err.Err.Error(),
 			Code:    err.Code,
 		})

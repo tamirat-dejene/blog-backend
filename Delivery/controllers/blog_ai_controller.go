@@ -17,7 +17,6 @@ func (b *BlogAIController) GenerateBlogContent(ctx *gin.Context) {
 	var req dto.AIBlogPostGenerateRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(400, domain.ErrorResponse{
-			Message: "Invalid request format",
 			Error:   err.Error(),
 			Code:    400,
 		})
@@ -31,7 +30,6 @@ func (b *BlogAIController) GenerateBlogContent(ctx *gin.Context) {
 
 	if err != nil {
 		ctx.JSON(err.Code, domain.ErrorResponse{
-			Message: "Failed to generate content",
 			Error:   err.Err.Error(),
 			Code:    err.Code,
 		})

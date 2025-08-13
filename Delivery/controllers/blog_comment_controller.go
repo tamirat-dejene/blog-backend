@@ -22,7 +22,6 @@ func (b *BlogCommentController) CreateComment(ctx *gin.Context) {
 
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
-			Message: "Invalid request",
 			Error:   err.Error(),
 			Code:    http.StatusBadRequest,
 		})
@@ -37,7 +36,6 @@ func (b *BlogCommentController) CreateComment(ctx *gin.Context) {
 	createdComment, domain_err := b.BlogCommentUsecase.CreateComment(ctx, comment)
 	if domain_err != nil {
 		ctx.JSON(domain_err.Code, domain.ErrorResponse{
-			Message: "Error creating comment",
 			Error:   domain_err.Err.Error(),
 			Code:    domain_err.Code,
 		})
@@ -61,7 +59,6 @@ func (b *BlogCommentController) DeleteComment(ctx *gin.Context) {
 		ID string `uri:"id" binding:"required"`
 	}{}); err != nil {
 		ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
-			Message: "Invalid comment ID format",
 			Error:   err.Error(),
 			Code:    http.StatusBadRequest,
 		})
@@ -73,7 +70,6 @@ func (b *BlogCommentController) DeleteComment(ctx *gin.Context) {
 
 	if err != nil {
 		ctx.JSON(err.Code, domain.ErrorResponse{
-			Message: "Error deleting comment",
 			Error:   err.Err.Error(),
 			Code:    err.Code,
 		})
@@ -95,7 +91,6 @@ func (b *BlogCommentController) GetCommentByID(ctx *gin.Context) {
 	// Extract the comment ID from the URL parameters
 	if err := ctx.ShouldBindUri(&uriParams); err != nil {
 		ctx.JSON(400, domain.ErrorResponse{
-			Message: "Invalid comment ID format",
 			Error:   err.Error(),
 			Code:    400,
 		})
@@ -107,7 +102,6 @@ func (b *BlogCommentController) GetCommentByID(ctx *gin.Context) {
 	comment, domain_err := b.BlogCommentUsecase.GetCommentByID(ctx, uriParams.ID)
 	if domain_err != nil {
 		ctx.JSON(domain_err.Code, domain.ErrorResponse{
-			Message: "Error fetching comment",
 			Error:   domain_err.Err.Error(),
 			Code:    domain_err.Code,
 		})
@@ -131,7 +125,6 @@ func (b *BlogCommentController) GetCommentsByBlogID(ctx *gin.Context) {
 	limitInt, err := strconv.Atoi(limit)
 	if err != nil || limitInt <= 0 {
 		ctx.JSON(400, domain.ErrorResponse{
-			Message: "Invalid limit format",
 			Error:   err.Error(),
 			Code:    400,
 		})
@@ -142,7 +135,6 @@ func (b *BlogCommentController) GetCommentsByBlogID(ctx *gin.Context) {
 	comments, domain_err := b.BlogCommentUsecase.GetCommentsByBlogID(ctx, ctx.Param("id"), limitInt)
 	if domain_err != nil {
 		ctx.JSON(domain_err.Code, domain.ErrorResponse{
-			Message: "Error fetching comments",
 			Error:   domain_err.Err.Error(),
 			Code:    domain_err.Code,
 		})
@@ -170,7 +162,6 @@ func (b *BlogCommentController) UpdateComment(ctx *gin.Context) {
 		ID string `uri:"id"`
 	}{}); err != nil {
 		ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
-			Message: "Invalid comment ID format",
 			Error:   err.Error(),
 			Code:    http.StatusBadRequest,
 		})
@@ -182,7 +173,6 @@ func (b *BlogCommentController) UpdateComment(ctx *gin.Context) {
 	var req dto.BlogCommentRequest
 	if err := ctx.ShouldBind(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
-			Message: "Invalid request",
 			Error:   err.Error(),
 			Code:    http.StatusBadRequest,
 		})
@@ -198,7 +188,6 @@ func (b *BlogCommentController) UpdateComment(ctx *gin.Context) {
 
 	if domain_err != nil {
 		ctx.JSON(domain_err.Code, domain.ErrorResponse{
-			Message: "Error updating comment",
 			Error:   domain_err.Err.Error(),
 			Code:    domain_err.Code,
 		})

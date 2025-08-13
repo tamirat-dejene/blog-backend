@@ -60,9 +60,8 @@ func (b *BlogPostController) GetBlogPosts(ctx *gin.Context) {
 	paginated_blogs, err := b.BlogPostUsecase.GetBlogs(ctx, filter)
 	if err != nil {
 		ctx.JSON(err.Code, domain.ErrorResponse{
-			Message: "Failed to retrieve blogs",
-			Error:   err.Err.Error(),
-			Code:    err.Code,
+			Error: err.Err.Error(),
+			Code:  err.Code,
 		})
 		return
 	}
@@ -87,8 +86,8 @@ func (b *BlogPostController) GetBlogPostByID(ctx *gin.Context) {
 	blog_id := ctx.Param("id")
 	if blog_id == "" {
 		ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
-			Message: "Blog ID is required",
-			Code:    http.StatusBadRequest,
+			Error: "Blog ID is required",
+			Code:  http.StatusBadRequest,
 		})
 		return
 	}
@@ -97,9 +96,8 @@ func (b *BlogPostController) GetBlogPostByID(ctx *gin.Context) {
 	blog, err := b.BlogPostUsecase.GetBlogByID(ctx, ctx.GetString("user_id"), blog_id)
 	if err != nil {
 		ctx.JSON(err.Code, domain.ErrorResponse{
-			Message: "Failed to retrieve blog",
-			Error:   err.Err.Error(),
-			Code:    err.Code,
+			Error: err.Err.Error(),
+			Code:  err.Code,
 		})
 		return
 	}
@@ -119,9 +117,8 @@ func (b *BlogPostController) CreateBlog(ctx *gin.Context) {
 
 	if err := ctx.ShouldBind(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
-			Message: "Invalid request payload",
-			Error:   err.Error(),
-			Code:    http.StatusBadRequest,
+			Error: err.Error(),
+			Code:  http.StatusBadRequest,
 		})
 		return
 	}
@@ -134,9 +131,8 @@ func (b *BlogPostController) CreateBlog(ctx *gin.Context) {
 	// Send create error response if any
 	if err != nil {
 		ctx.JSON(err.Code, domain.ErrorResponse{
-			Message: "Failed to create blog",
-			Error:   err.Err.Error(),
-			Code:    err.Code,
+			Error: err.Err.Error(),
+			Code:  err.Code,
 		})
 		return
 	}
@@ -159,9 +155,8 @@ func (b *BlogPostController) UpdateBlog(ctx *gin.Context) {
 	var req dto.BlogPostRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
-			Message: "Invalid request payload",
-			Error:   err.Error(),
-			Code:    http.StatusBadRequest,
+			Error: err.Error(),
+			Code:  http.StatusBadRequest,
 		})
 		return
 	}
@@ -175,9 +170,8 @@ func (b *BlogPostController) UpdateBlog(ctx *gin.Context) {
 	updatedBlog, err := b.BlogPostUsecase.UpdateBlog(ctx, id, *blog)
 	if err != nil {
 		ctx.JSON(err.Code, domain.ErrorResponse{
-			Message: "Failed to update blog",
-			Error:   err.Err.Error(),
-			Code:    err.Code,
+			Error: err.Err.Error(),
+			Code:  err.Code,
 		})
 		return
 	}
@@ -199,9 +193,8 @@ func (b *BlogPostController) DeleteBlog(ctx *gin.Context) {
 
 	if err != nil {
 		ctx.JSON(err.Code, domain.ErrorResponse{
-			Message: "Failed to delete blog",
-			Error:   err.Err.Error(),
-			Code:    err.Code,
+			Error: err.Err.Error(),
+			Code:  err.Code,
 		})
 		return
 	}
